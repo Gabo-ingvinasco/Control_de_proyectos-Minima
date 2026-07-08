@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mínima Arquitectos — Control de Portafolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:#f6f1ee;color:#1a1a1a;display:flex;flex-direction:column}
+.sidebar{position:fixed;left:0;top:0;width:200px;height:100%;background:#474545;display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.18)}
+.sidebar-logo img{width:100%;max-width:130px}
+.sidebar-logo .sub{font-family:'Montserrat',sans-serif;font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-top:8px}
+.sidebar-nav{flex:1;padding:14px 0}
+.nav-section{padding:8px 20px 4px;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.55);text-transform:uppercase;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:12px;color:rgba(255,255,255,.82);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.nav-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.04)}
+.nav-item.active{color:#fff;background:rgba(245,157,29,.22);border-left-color:#f59d1d}
+.nav-item svg{flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.18)}
+.sidebar-footer .upd{font-size:10px;color:rgba(255,255,255,.3);line-height:1.6}
+.sidebar-footer .upd span{color:rgba(255,255,255,.5)}
+.main{margin-left:200px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:#eae7e3;border-bottom:1px solid #d0cdc8;padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;color:#1a1a1a}
+.topbar-sub{font-size:11px;color:#6b6b66;margin-top:1px}
+.filters{display:flex;gap:8px}
+.filter-select{appearance:none;border:1px solid #c8c5c0;border-radius:6px;padding:5px 28px 5px 10px;font-size:11px;font-family:'Inter',sans-serif;color:#1a1a1a;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b66'/%3E%3C/svg%3E") no-repeat right 8px center;cursor:pointer;outline:none;transition:border-color .15s}
+.filter-select:hover,.filter-select:focus{border-color:#e8622a}
+.content{flex:1;overflow-y:auto;padding:20px 28px 28px}
+.page{display:none}
+.page.active{display:block}
+.kpi-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid #d4d3cf;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:9px}
+.kpi-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-ico.total{background:#fff0e8}.kpi-ico.ejec{background:#e5f7ef}.kpi-ico.liq{background:#fef8e7}
+.kpi-ico.ini{background:#eeeafc}.kpi-ico.cerr{background:#f0f0ee}.kpi-ico.gar{background:#e6f1fb}.kpi-ico.obs{background:#fce8e8}
+.kpi-num{font-family:'Montserrat',sans-serif;font-weight:700;font-size:20px;color:#1a1a1a;line-height:1}
+.kpi-lbl{font-size:9px;color:#6b6b66;margin-top:2px;line-height:1.3}
+.finance-bar{background:#d8d7d7;border-radius:10px;padding:13px 20px;display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr;gap:0;margin-bottom:16px;align-items:center}
+.finance-bar-lbl{font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:1.5px;font-weight:600;color:rgba(26,26,26,.55);text-transform:uppercase;padding-right:18px;border-right:1px solid rgba(26,26,26,.15)}
+.finance-item{padding:0 18px;border-right:1px solid rgba(26,26,26,.1)}
+.finance-item:last-child{border-right:none}
+.finance-item .fn{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a}
+.finance-item .fl{font-size:9px;color:rgba(26,26,26,.55);margin-top:2px}
+.finance-item .fd{font-size:10px;margin-top:2px}.finance-item .fd.neg{color:#e8622a}.finance-item .fd.pos{color:#4abe8a}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid21{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:12px}
+.grid12{display:grid;grid-template-columns:1fr 1.5fr;gap:12px;margin-bottom:12px;align-items:stretch}
+.fc-detail-panel{max-height:420px;overflow-y:auto}
+.grid-donut{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;margin-bottom:12px}
+.grid-donut-right{display:flex;flex-direction:column;gap:12px}
+.panel{background:#fff;border:1px solid #d4d3cf;border-radius:10px;padding:14px 16px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.panel-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6b6b66}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:4px 0}
+.donut-chart-wrap{position:relative;width:190px;height:190px;flex-shrink:0}
+#donutChart{width:190px!important;height:190px!important}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-big-n{font-size:30px;font-weight:700;color:#1a1a1a;line-height:1}
+.donut-sub{font-size:11px;color:#6b6b66;margin-top:3px;letter-spacing:.03em}
+.legend-list{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;width:100%;max-width:260px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#6b6b66;min-width:0}
+.legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.legend-n{font-weight:600;color:#1a1a1a;margin-left:auto}
+.risk-row{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f0efec;align-items:flex-start}
+.risk-row:last-child{border-bottom:none}
+.rbadge{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;flex-shrink:0;margin-top:1px}
+.rbadge.alta{background:#fce8e8;color:#c0392b}.rbadge.media{background:#fef3dc;color:#a0620a}.rbadge.baja{background:#e5f7ef;color:#1a8a52}
+.risk-proj{font-size:11px;font-weight:600;color:#1a1a1a}
+.risk-desc{font-size:10px;color:#6b6b66;margin-top:1px}
+.health-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.health-row:last-child{margin-bottom:0}
+.health-lbl{font-size:11px;color:#6b6b66;width:90px;flex-shrink:0}
+.hbar-bg{flex:1;height:5px;background:#f0efec;border-radius:3px;overflow:hidden}
+.hbar-fill{height:100%;border-radius:3px}
+.health-pct{font-size:11px;font-weight:600;width:34px;text-align:right;flex-shrink:0}
+.hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.action-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0efec;cursor:pointer}
+.action-row:last-child{border-bottom:none}
+.aproj{font-size:11px;font-weight:600;color:#1a1a1a;width:80px;flex-shrink:0}
+.adesc{font-size:11px;color:#6b6b66;flex:1}
+.aresp{font-size:10px;color:#6b6b66;width:90px;flex-shrink:0;text-align:right}
+.pbadge{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
+.pbadge.alta{background:#fce8e8;color:#c0392b}.pbadge.media{background:#fef3dc;color:#a0620a}.pbadge.baja{background:#e5f7ef;color:#1a8a52}
+.quick-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 10px;border:1px solid #d4d3cf;border-radius:10px;cursor:pointer;background:#fff;transition:all .15s;text-align:center}
+.quick-btn:hover{border-color:#e8622a;background:#fff8f5}
+.quick-btn svg{color:#e8622a}
+.quick-btn span{font-size:10px;color:#6b6b66;line-height:1.3}
+.proj-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.pfbtn{padding:4px 14px;border-radius:20px;font-size:11px;border:1px solid #d4d3cf;background:#fff;color:#6b6b66;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.pfbtn.active{background:#e8622a;color:#fff;border-color:#e8622a}
+.pfbtn:hover:not(.active){border-color:#e8622a;color:#e8622a}
+.tbl-wrap{background:#fff;border:1px solid #d4d3cf;border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{text-align:left;padding:8px 10px;font-size:9px;color:#6b6b66;font-weight:600;letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid #d4d3cf;background:#f9f8f6;white-space:nowrap}
+tbody td{padding:7px 10px;border-bottom:1px solid #f0efec;color:#6b6b66;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#fafaf8;cursor:pointer}
+.td-primary{font-weight:600;color:#1a1a1a!important}
+.td-code{font-weight:500;color:#e8622a!important;white-space:nowrap;font-size:10px}
+.estado-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
+.eb-ejec{background:#e5f7ef;color:#1a8a52}.eb-liq{background:#fef3dc;color:#a0620a}
+.eb-gar{background:#e6f1fb;color:#1a5fa5}.eb-ini{background:#eeeafc;color:#4a3aa7}.eb-cerr{background:#f0f0ee;color:#6b6b66}
+.eb-fin{background:#5a8a5a;color:#fff;}
+.av-bar{height:4px;border-radius:2px;background:#f0efec;overflow:hidden;width:60px}
+.av-fill{height:100%;border-radius:2px}
+.td-money{font-weight:600;color:#1a1a1a!important}
+.td-neg{color:#c0392b!important;font-weight:600}.td-warn{color:#a0620a!important;font-weight:600}.td-ok{color:#1a8a52!important;font-weight:600}
+.dir-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.dir-card{background:#fff;border:1px solid #d4d3cf;border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.dir-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#e8622a;transform:scaleX(0);transition:transform .2s}
+.dir-card:hover{border-color:#e8622a}.dir-card:hover::before{transform:scaleX(1)}
+.dir-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.dir-av{width:40px;height:40px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.dir-name{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;color:#1a1a1a}
+.dir-cargo{font-size:10px;color:#6b6b66;margin-top:2px}
+.dir-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}
+.dir-kpi{text-align:center;background:#f9f8f6;border-radius:6px;padding:6px 4px}
+.dir-kpi-n{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a}
+.dir-kpi-l{font-size:9px;color:#6b6b66;margin-top:1px}
+.dir-fin{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
+.dir-fin-item{background:#f9f8f6;border-radius:6px;padding:6px 10px}
+.dir-fin-v{font-size:12px;font-weight:600;color:#1a1a1a}
+.dir-fin-l{font-size:9px;color:#6b6b66}
+.dir-dif-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 0;padding:10px 0 0;border-top:1px solid #f0ede8}
+.dir-dif-item{}
+.dir-dif-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.dir-dif-v{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;line-height:1}
+.dir-av-row{display:flex;align-items:center;gap:8px}
+.dir-av-lbl{font-size:10px;color:#6b6b66;width:80px}
+.dir-av-bg{flex:1;height:4px;background:#f0efec;border-radius:2px;overflow:hidden}
+.dir-av-fill{height:100%;border-radius:2px}
+.dir-pct{font-size:11px;font-weight:600;width:30px;text-align:right}
+/* ── FICHA PROYECTO ── */
+.ficha-back{display:flex;align-items:center;gap:8px;font-size:12px;color:#e8622a;cursor:pointer;margin-bottom:14px;font-weight:500}
+.ficha-back:hover{text-decoration:underline}
+.ficha-header{background:#1a1a1a;border-radius:10px;padding:18px 22px;display:grid;grid-template-columns:1fr auto;gap:20px;margin-bottom:14px;align-items:start}
+.ficha-codigo{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;color:#e8622a;margin-bottom:4px}
+.ficha-nombre{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:6px}
+.ficha-meta{display:flex;gap:20px;flex-wrap:wrap}
+.ficha-meta-item{font-size:11px;color:rgba(255,255,255,.5)}
+.ficha-meta-item span{color:rgba(255,255,255,.85);font-weight:500}
+.ficha-salud{text-align:right}
+.ficha-salud-n{font-family:'Montserrat',sans-serif;font-size:42px;font-weight:700;color:#fff;line-height:1}
+.ficha-salud-l{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px}
+.ficha-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.ficha-kpi{background:#fff;border:1px solid #d4d3cf;border-radius:10px;padding:12px 14px}
+.ficha-kpi-v{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:#1a1a1a}
+.ficha-kpi-l{font-size:9px;color:#6b6b66;margin-top:3px}
+.ficha-kpi-bar{height:3px;background:#f0efec;border-radius:2px;overflow:hidden;margin-top:8px}
+.ficha-kpi-bar-fill{height:100%;border-radius:2px}
+/* CRONOGRAMA */
+.cronograma-wrap{overflow-x:auto}
+.cronograma-table{min-width:700px;width:100%;border-collapse:collapse;font-size:11px}
+.cronograma-table th{text-align:left;padding:6px 10px;font-size:9px;color:#6b6b66;font-weight:600;letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid #d4d3cf;background:#f9f8f6;white-space:nowrap}
+.cronograma-table td{padding:6px 10px;border-bottom:1px solid #f0efec;vertical-align:middle}
+.cap-num{font-size:9px;font-weight:700;color:#e8622a;width:50px}
+.cap-nombre{font-weight:600;color:#1a1a1a;width:140px}
+.cap-bar-wrap{position:relative;height:14px;border-radius:3px;overflow:hidden;background:#f0efec;flex:1}
+.cap-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.cap-pct{font-size:10px;font-weight:600;width:40px;text-align:right}
+.cap-monto{font-size:10px;color:#6b6b66;width:90px;text-align:right}
+/* PRESUPUESTO TABS */
+.presupuesto-caps{display:flex;flex-direction:column;gap:6px}
+.cap-row{display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f9f8f6;border-radius:8px;border:1px solid #f0efec;cursor:pointer;transition:all .15s}
+.cap-row:hover{border-color:#d4d3cf;background:#fff}
+.cap-row.sel{border-color:#e8622a;background:#fff8f5}
+.cap-icon{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.cap-info{flex:1}
+.cap-info-top{display:flex;justify-content:space-between;align-items:center}
+.cap-info-label{font-size:11px;font-weight:600;color:#1a1a1a}
+.cap-info-monto{font-size:11px;font-weight:600;color:#1a1a1a}
+.cap-info-sub{font-size:10px;color:#6b6b66;margin-top:1px}
+.cap-bar-mini{height:3px;background:#f0efec;border-radius:2px;overflow:hidden;margin-top:5px}
+.cap-bar-mini-fill{height:100%;border-radius:2px}
+/* ALERTAS */
+.obs-panel{background:#fff8f5;border:1px solid #f0c8b8;border-radius:10px;padding:13px 16px;margin-bottom:12px}
+.obs-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.obs-header svg{color:#e8622a;flex-shrink:0}
+.obs-header-txt{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#e8622a}
+.obs-row{display:flex;gap:8px;padding:4px 0;font-size:11px}
+.obs-code{color:#e8622a;font-weight:600;width:80px;flex-shrink:0}
+.obs-txt{color:#6b6b66}
+/* FINANCIERO */
+.fin-big{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:700;color:#1a1a1a;margin-top:5px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d4d3cf;border-radius:3px}
+
+
+/* ── COMPARATIVO ── */
+.cmp-wrap{display:flex;gap:12px;margin-bottom:12px}
+.cmp-yr{flex:1;background:#fff;border:1px solid #d4d3cf;border-radius:10px;padding:16px 20px;min-width:0}
+.cmp-yr-badge{display:inline-block;padding:3px 14px;border-radius:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;margin-bottom:12px}
+.cmp-yr-badge.y25{background:#e8f3ec;color:#1a6b3a}
+.cmp-yr-badge.y26{background:#fff4e0;color:#b06a00}
+.cmp-kpi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cmp-kpi{background:#f6f4f1;border-radius:6px;padding:10px 12px}
+.cmp-kpi-n{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#1a1a1a;line-height:1.1}
+.cmp-kpi-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.cmp-sep{display:flex;align-items:center;justify-content:center;width:32px;flex-shrink:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:10px;color:#bbb;writing-mode:vertical-rl;letter-spacing:2px}
+.comp-table{width:100%;border-collapse:collapse;font-size:12px}
+.comp-table th{text-align:left;padding:8px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#6b6b66;border-bottom:1px solid #e8e6e1;font-weight:600}
+.comp-table td{padding:9px 12px;border-bottom:1px solid #f0ede8;color:#1a1a1a}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table td:first-child{font-weight:500}
+.comp-table td:nth-child(2){color:#1a6b3a}
+.comp-table td:nth-child(3){color:#b06a00}
+
+/* ── DIRECTOR DRAWER ── */
+.dir-page-wrap{display:flex;gap:0;align-items:flex-start}
+.dir-grid-col{flex:1;min-width:0}
+.dir-drawer{width:0;overflow:hidden;transition:width .28s ease;flex-shrink:0}
+.dir-drawer.open{width:740px}
+.dir-drawer-inner{width:740px;display:flex;flex-direction:column;gap:12px;padding:0 0 0 12px}
+.dir-panel{background:#fff;border:1px solid #d4d3cf;border-radius:10px;overflow:hidden}
+.dir-drawer-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f0ede8}
+.dir-drawer-ttl{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#1a1a1a;letter-spacing:.3px}
+.dir-close-btn{border:none;background:none;cursor:pointer;color:#888;padding:4px;border-radius:4px;line-height:0;flex-shrink:0}
+.dir-close-btn:hover{background:#f0ede8;color:#1a1a1a}
+.dir-tbl-wrap{overflow-x:auto;padding:0 4px 4px}
+.dir-proj-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.dir-proj-tbl th{text-align:left;padding:7px 10px;font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:#888;border-bottom:2px solid #e8e6e1;font-weight:600;white-space:nowrap;background:#fff}
+.dir-proj-tbl td{padding:8px 10px;border-bottom:1px solid #f0ede8;vertical-align:middle;color:#1a1a1a;white-space:nowrap}
+.dir-proj-tbl tr:last-child td{border-bottom:none}
+.dir-proj-tbl tr:hover td{background:#faf9f7}
+.dir-totals{padding:10px 16px;background:#f6f4f1;border-top:2px solid #e8e6e1;display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.dir-tot-item{}
+.dir-tot-l{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:2px}
+.dir-tot-v{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;color:#1a1a1a}
+.dir-card.selected{border-color:#e8622a !important;box-shadow:0 0 0 2px rgba(232,98,42,.15)}
+.dir-card.selected::before{transform:scaleX(1) !important}
+
+#proj-detail{display:none;background:#fff;border:1px solid #d4d3cf;border-radius:10px;overflow:hidden;margin-bottom:12px}
+#proj-detail.open{display:block}
+.pdet-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #f0ede8;background:#faf9f7}
+.pdet-title{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#1a1a1a}
+.pdet-close{border:none;background:none;cursor:pointer;color:#888;padding:4px;border-radius:4px;line-height:0}
+.pdet-close:hover{background:#f0ede8}
+.pdet-charts{display:grid;grid-template-columns:3fr 2fr}
+.pdet-sec{padding:14px 16px;border-right:1px solid #f0ede8}
+.pdet-sec:last-child{border-right:none}
+.pdet-sec-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#888;font-weight:600;margin-bottom:8px}
+.pdet-nodata{color:#bbb;font-size:11px;height:180px;display:flex;align-items:center;justify-content:center}
+tr.sel-row td{background:#fff8f4 !important}
+/* ── FLUJO DE CAJA ── */
+.kpi-ico.venc{background:#fce8e8}
+.hb{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
+.hb-pend{background:#f0f0ee;color:#6b6b66}.hb-pres{background:#fef3dc;color:#a0620a}.hb-cob{background:#e5f7ef;color:#1a8a52}
+.ht{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
+.ht-Anticipo{background:#e8f0fb;color:#2e7dd1}.ht-Corte{background:#e5f7ef;color:#1a8a52}
+.ht-Liquidación{background:#fff0e8;color:#e8622a}.ht-Retegarantía{background:#fbe9e5;color:#a82c00}
+.fc-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#6b6b66;margin-bottom:10px}
+.fc-legend span{display:inline-flex;align-items:center;gap:5px}
+.fc-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.fc-note{font-size:10px;color:#a0620a;background:#fff8f5;border:1px solid #f0c8b8;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+#fcTipoChart{width:190px!important;height:190px!important}
+.fc-r4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.fc-r4-card{border:1px solid #e8e5e0;border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;background:#fff}
+.fc-r4-card:hover{border-color:#e8622a;background:#fff8f5}
+.fc-r4-card.active{border-color:#e8622a;background:#fff3ec;box-shadow:0 0 0 1px #e8622a inset}
+.fc-r4-wk{font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:#a09c96;font-weight:600}
+.fc-r4-date{font-size:11px;color:#1a1a1a;font-weight:600;margin-bottom:8px}
+.fc-r4-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#6b6b66;margin-top:4px}
+.fc-r4-val{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:#1a1a1a}
+.fc-r4-val.ing{color:#1a8a52}.fc-r4-val.pres{color:#a0620a}.fc-r4-val.venc{color:#c0392b}
+.fc-r4-detail-wrap{margin-top:12px;border-top:1px solid #f0efec;padding-top:12px}
+.fc-r4-detail-title{font-size:11px;font-weight:600;color:#1a1a1a;margin-bottom:8px}
+.fc-r4-detail-empty{font-size:11px;color:#aaa;padding:8px 0}
+.fc-r4-row.vencido{margin-top:8px;padding:5px 7px;background:#fbeceb;border-radius:6px}
+.fc-r4-row.vencido span:first-child{color:#c0392b;font-weight:600}
+.fc-r4-row.total{margin-top:2px;padding-top:6px;border-top:1px solid #efece7}
+.fc-r4-row.total span:first-child{color:#1a1a1a;font-weight:600;font-size:10px}
+.fc-r4-val.total{color:#1a1a1a}
+.fc-r4-detail-title.venc{color:#c0392b}
+
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://drive.google.com/thumbnail?id=1rqEu2PgAtrZ9ZzgLmPLwGWEcC9HAjhLO&sz=w300" alt="Mínima Arquitectos"
+      onerror="this.style='display:none';document.getElementById('logo-txt').style.display='block'">
+    <div id="logo-txt" style="display:none;font-family:Montserrat,sans-serif;font-weight:700;font-size:16px;color:#fff;letter-spacing:3px">MÍNIMA</div>
+    <div class="sub">Control de portafolio</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Portafolio</div>
+    <a class="nav-item active" onclick="showPage('resumen',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Resumen ejecutivo
+    </a>
+    <a class="nav-item" onclick="showPage('proyectos',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+      Proyectos
+    </a>
+    <a class="nav-item" onclick="showPage('directores',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Directores
+    </a>
+    <div class="nav-section" style="margin-top:10px">Análisis</div>
+    <a class="nav-item" onclick="showPage('alertas',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Alertas
+    </a>
+    <a class="nav-item" onclick="showPage('financiero',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Control financiero
+    </a>
+    <a class="nav-item" onclick="showPage('flujocaja',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="9" x2="23" y2="9"/><line x1="5" y1="14" x2="9" y2="14"/></svg>
+      Flujo de Caja
+    </a>
+    <a class="nav-item" onclick="showPage('comparativo',this)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Comparativo anual
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="upd">Última actualización<br><span>06 Jul 2026</span></div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="page-title">RESUMEN EJECUTIVO</div>
+      <div class="topbar-sub" id="page-sub">Portafolio de proyectos</div>
+    </div>
+    <div class="filters">
+      <select class="filter-select" id="fil-anio" onchange="applyFilters()">
+        <option value="todos">Todos los años</option>
+      </select>
+      <select class="filter-select" id="fil-mes" onchange="applyFilters()">
+        <option value="todos">Todos los meses</option>
+      </select>
+      <select class="filter-select" id="fil-enc" onchange="applyFilters()">
+        <option value="todos">Todos los encargados</option>
+      </select>
+      <select class="filter-select" id="fil-estado" onchange="applyFilters()">
+        <option value="todos">Todos los estados</option>
+        <option>Finalizado</option><option>En Ejecución</option><option>En Liquidación</option><option>Garantias</option><option>Por Iniciar</option><option>Cerrado</option>
+      </select>
+      <select class="filter-select" id="fil-sector" onchange="applyFilters()">
+        <option value="todos">Todos los sectores</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="content" id="main-content">
+
+    <!-- ════ RESUMEN ════ -->
+    <div class="page active" id="page-resumen">
+      <div class="kpi-strip" id="kpi-strip"></div>
+      <div class="finance-bar" id="finance-bar"></div>
+      <div class="grid3">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Distribución por estado</div></div>
+          <div class="donut-wrap">
+            <div class="donut-chart-wrap">
+              <canvas id="donutChart"></canvas>
+              <div class="donut-center" id="donut-center-text">
+                <div class="donut-big-n">—</div>
+                <div class="donut-sub">proyectos</div>
+              </div>
+            </div>
+            <div class="legend-list" id="donut-legend"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Top riesgos del portafolio</div></div>
+          <div id="risk-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Salud general</div></div>
+          <div id="health-list"></div>
+        </div>
+      </div>
+      <div class="grid21">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Atención gerencial — acciones requeridas</div></div>
+          <div id="action-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Proyectos por sector</div></div>
+          <div style="height:150px;position:relative"><canvas id="sectorChart"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-head"><div class="panel-title">Accesos rápidos</div></div>
+        <div class="quick-grid">
+          <div class="quick-btn" onclick="showPage('proyectos',null)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+            <span>Listado de proyectos</span>
+          </div>
+          <div class="quick-btn" onclick="showPage('directores',null)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span>Dashboard directores</span>
+          </div>
+          <div class="quick-btn" onclick="showPage('alertas',null)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            <span>Alertas y observaciones</span>
+          </div>
+          <div class="quick-btn" onclick="showPage('financiero',null)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Control financiero</span>
+          </div>
+          <div class="quick-btn" onclick="window.open('https://docs.google.com/spreadsheets/d/1CbTHrQqdji7HayP2XuVz_x-aJE4o4CGKq0zI1immtfM/edit','_blank')">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Fuente Google Sheets</span>
+          </div>
+          <div class="quick-btn" onclick="showPage('flujocaja',null)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="9" x2="23" y2="9"/></svg>
+            <span>Flujo de caja</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ PROYECTOS ════ -->
+    <div class="page" id="page-proyectos">
+      <div id="proj-detail">
+        <div class="pdet-hd">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="pdet-title" id="pdet-titulo"></div>
+            <div id="pdet-info" style="font-size:11px;color:#888"></div>
+          </div>
+          <button class="pdet-close" onclick="closeProjDetail()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="pdet-charts">
+          <div class="pdet-sec">
+            <div class="pdet-sec-lbl">Curva S — Programado vs Real</div>
+            <div id="curva-wrap" style="height:190px;position:relative"></div>
+          </div>
+          <div class="pdet-sec">
+            <div class="pdet-sec-lbl">Avance por capítulo</div>
+            <div id="cap-wrap" style="height:190px;position:relative;overflow-y:auto"></div>
+          </div>
+        </div>
+      </div>
+      <div class="proj-filters" id="estado-filters"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Código</th><th>Proyecto</th><th>Cliente</th><th>Estado</th>
+            <th>Director/a</th><th>Ciudad</th><th style="text-align:right">Valor total</th>
+            <th style="text-align:right">Pend. cobrar</th><th style="text-align:right">Dif. SN%</th>
+            <th>Avance obra</th>
+          </tr></thead>
+          <tbody id="proj-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ════ FICHA PROYECTO ════ -->
+    <div class="page" id="page-ficha">
+      <div class="ficha-back" onclick="showPage('proyectos',null)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al listado
+      </div>
+      <div class="ficha-header" id="ficha-header"></div>
+      <div class="ficha-kpis" id="ficha-kpis"></div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Curva S — Avance del proyecto</div></div>
+          <div style="height:200px;position:relative"><canvas id="curvaSChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Salud del proyecto</div></div>
+          <div id="ficha-health"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Cronograma — Capítulos a ejecutar</div></div>
+          <div id="cronograma-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Presupuesto resumido por capítulo</div></div>
+          <div class="presupuesto-caps" id="presupuesto-caps"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ DIRECTORES ════ -->
+    <div class="page" id="page-directores">
+      <div class="dir-page-wrap">
+        <div class="dir-grid-col">
+          <div class="dir-grid" id="dir-grid"></div>
+        </div>
+        <div class="dir-drawer" id="dir-drawer">
+          <div class="dir-drawer-inner">
+            <div class="dir-panel">
+              <div class="dir-drawer-hd">
+                <div class="dir-drawer-ttl" id="dir-drawer-ttl">Proyectos</div>
+                <button class="dir-close-btn" onclick="closeDrawer()">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="dir-tbl-wrap">
+                <table class="dir-proj-tbl" id="dir-proj-tbl">
+                  <thead><tr>
+                    <th>Código</th><th>Proyecto</th><th>Estado</th>
+                    <th style="text-align:right">Valor</th>
+                    <th style="text-align:right">Dif.CCV%</th>
+                    <th style="text-align:right">Dif.SCV%</th>
+                    <th style="text-align:right">Px Facturar</th>
+                    <th style="text-align:right">Px Cobrar</th>
+                    <th style="text-align:right">Avance</th>
+                  </tr></thead>
+                  <tbody id="dir-drawer-body"></tbody>
+                </table>
+              </div>
+              <div class="dir-totals" id="dir-totals">
+                <div class="dir-tot-item"><div class="dir-tot-l">Proyectos</div><div class="dir-tot-v" id="tot-n">—</div></div>
+                <div class="dir-tot-item"><div class="dir-tot-l">Valor total</div><div class="dir-tot-v" id="tot-val">—</div></div>
+                <div class="dir-tot-item"><div class="dir-tot-l">Pend. facturar</div><div class="dir-tot-v" id="tot-fac" style="color:#c08a00">—</div></div>
+                <div class="dir-tot-item"><div class="dir-tot-l">Pend. cobrar</div><div class="dir-tot-v" id="tot-cob" style="color:#c0392b">—</div></div>
+                <div class="dir-tot-item"><div class="dir-tot-l">Dif. CCV% prom.</div><div class="dir-tot-v" id="tot-ccv">—</div></div>
+                <div class="dir-tot-item"><div class="dir-tot-l">Dif. SCV% prom.</div><div class="dir-tot-v" id="tot-scv">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ ALERTAS ════ -->
+    <div class="page" id="page-alertas">
+      <div class="obs-panel">
+        <div class="obs-header">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+          <span class="obs-header-txt">Proyectos con observaciones documentales críticas</span>
+        </div>
+        <div id="obs-list"></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Proyectos con retraso en entrega</div></div>
+          <div id="delay-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Diferencia SN% mayor al 30% — revisión urgente</div></div>
+          <div id="margin-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ FINANCIERO ════ -->
+    <div class="page" id="page-financiero">
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="panel" style="background:#1a1a1a">
+          <div class="panel-title" style="color:rgba(255,255,255,.4)">Valor total portafolio</div>
+          <div class="fin-big" style="color:#fff" id="fin-total">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px" id="fin-total-count">— proyectos</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Pendiente por facturar</div>
+          <div class="fin-big" id="fin-fact">—</div>
+          <div style="font-size:10px;color:#a0620a;margin-top:4px">▼ Gestión activa requerida</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Pendiente por cobrar</div>
+          <div class="fin-big" style="color:#e8622a" id="fin-cobr">—</div>
+          <div style="font-size:10px;color:#c0392b;margin-top:4px">▼ Cartera crítica — priorizar recaudo</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Valor portafolio por encargado</div></div>
+          <div style="height:210px;position:relative"><canvas id="encChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Diferencia SN% por proyecto</div></div>
+          <div style="height:210px;position:relative"><canvas id="snChart"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Tabla financiera detallada</div></div>
+        <div style="overflow-x:auto">
+          <table style="min-width:850px">
+            <thead><tr>
+              <th>Código</th><th>Proyecto</th><th style="text-align:right">Valor total</th>
+              <th style="text-align:right">Liq. SN</th><th style="text-align:right">V. contable</th>
+              <th style="text-align:right">Pagado</th><th style="text-align:right">Pend. cobrar</th>
+              <th style="text-align:right">Dif. SN%</th><th style="text-align:right">Dif. CN%</th>
+            </tr></thead>
+            <tbody id="fin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ FLUJO DE CAJA ════ -->
+    <div class="page" id="page-flujocaja">
+      <div class="fc-note" id="fc-note" style="display:none"></div>
+      <div class="kpi-strip" id="fc-kpi-strip" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="panel-head"><div class="panel-title">Resumen próximas 4 semanas</div></div>
+        <div class="fc-r4-grid" id="fc-resumen4"></div>
+      </div>
+      <div class="grid12">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Detalle de la semana seleccionada</div></div>
+          <div id="fc-resumen4-detail" class="fc-detail-panel"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Flujo de caja proyectado — próximas 12 semanas</div></div>
+          <div class="fc-legend">
+            <span><i class="fc-dot" style="background:#2e7dd1"></i>Anticipo</span>
+            <span><i class="fc-dot" style="background:#1a8a52"></i>Corte</span>
+            <span><i class="fc-dot" style="background:#e8622a"></i>Liquidación</span>
+            <span><i class="fc-dot" style="background:#a82c00"></i>Retegarantía</span>
+            <span><i class="fc-dot" style="background:#c0392b"></i>Vencido</span>
+          </div>
+          <div style="height:400px;position:relative"><canvas id="fcSemanaChart"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="panel-head"><div class="panel-title">Distribución por tipo de hito</div></div>
+        <div class="donut-wrap">
+          <div class="donut-chart-wrap">
+            <canvas id="fcTipoChart"></canvas>
+            <div class="donut-center" id="fc-donut-center">
+              <div class="donut-big-n" id="fc-donut-n">—</div>
+              <div class="donut-sub">hitos</div>
+            </div>
+          </div>
+          <div class="legend-list" id="fc-tipo-legend"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="panel-head"><div class="panel-title">Próximos hitos a presentar</div></div>
+        <div class="tbl-wrap" style="border:none">
+          <table>
+            <thead><tr>
+              <th>Semana</th><th>Proyecto</th><th>Encargado</th><th>Hito</th>
+              <th style="text-align:right">Valor</th><th>Estado</th><th>Fecha presentado</th>
+            </tr></thead>
+            <tbody id="fc-hitos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-head"><div class="panel-title">Resumen por proyecto</div></div>
+        <div class="tbl-wrap" style="border:none">
+          <table>
+            <thead><tr>
+              <th>Código</th><th>Proyecto</th><th>Encargado</th><th>Estado</th>
+              <th style="text-align:right">Valor total</th><th style="text-align:right">Programado</th>
+              <th style="text-align:right">Sin programar</th>
+            </tr></thead>
+            <tbody id="fc-proy-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-comparativo">
+    <div class="cmp-wrap">
+      <div class="cmp-yr">
+        <div class="cmp-yr-badge y25">2025</div>
+        <div id="cmp-kpi-25" class="cmp-kpi-grid"></div>
+      </div>
+      <div class="cmp-sep">VS</div>
+      <div class="cmp-yr">
+        <div class="cmp-yr-badge y26">2026</div>
+        <div id="cmp-kpi-26" class="cmp-kpi-grid"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Valor CCV Finalizados/Cerrados — por Mes</div></div>
+        <div style="height:260px;position:relative"><canvas id="compMesChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">VS Directores — Número de proyectos</div></div>
+        <div style="height:260px;position:relative"><canvas id="compDirCountChart"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">VS Sectores</div></div>
+      <div id="comp-sector-table"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAPS = [
+  {n:"CAP 01",nom:"Preliminares",ico:"🏗️",color:"#6b6b66",pct:0,monto:20000},
+  {n:"CAP 02",nom:"Demoliciones",ico:"⚠️",color:"#c0392b",pct:0,monto:56000},
+  {n:"CAP 03",nom:"Obra Civil",ico:"⭕",color:"#4a8fc0",pct:0,monto:131000},
+  {n:"CAP 04",nom:"Muros",ico:"🧱",color:"#c08a00",pct:0,monto:131000},
+  {n:"CAP 05",nom:"Cielos Rasos",ico:"📐",color:"#4a3aa7",pct:0,monto:162000},
+  {n:"CAP 06",nom:"Pisos/Enchapes",ico:"▦",color:"#1a8a52",pct:0,monto:283000},
+  {n:"CAP 07",nom:"Pintura",ico:"🎨",color:"#4a8fc0",pct:0,monto:81000},
+  {n:"CAP 08",nom:"Carpintería",ico:"🪵",color:"#6b6b66",pct:0,monto:283000},
+  {n:"CAP 09",nom:"Eléctrica",ico:"⚡",color:"#c08a00",pct:0,monto:131000},
+  {n:"CAP 10",nom:"Iluminación",ico:"💡",color:"#c0392b",pct:0,monto:91000},
+  {n:"CAP 11",nom:"HVAC",ico:"🌡️",color:"#1a8a52",pct:0,monto:81000},
+  {n:"CAP 12",nom:"Hidro",ico:"💧",color:"#4a8fc0",pct:0,monto:35000},
+  {n:"CAP 13",nom:"RCI",ico:"🚨",color:"#c0392b",pct:0,monto:56000},
+  {n:"CAP 14",nom:"Diseño",ico:"✦",color:"#4a3aa7",pct:0,monto:111000},
+  {n:"CAP 15",nom:"Varios",ico:"◆",color:"#e8622a",pct:0,monto:28000},
+];
+
+const PROJECTS=[
+  {codigo:"C-25-001",cliente:"TERRANUM DESARROLLO S.A.S.",proyecto:"Terranum Connecta 80 Fase I",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:3,valor:853302118,liqSN:704370171,difCNpct:13.9,difSN:148931947,difSNpct:17.45,vContable:853302118,vPagado:828829130,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:-6,obs:""},
+  {codigo:"C-25-002",cliente:"STF GROUP S.A.",proyecto:"ELA Mall Plaza NQS",estado:"Finalizado",sector:"Retail",ciudad:"Bogotá",encargado:"Camila Duran",cargo:"Directora de Proyectos",anio:2025,mes:3,valor:282086973,liqSN:214594440,difCNpct:23.78,difSN:67492532,difSNpct:23.93,vContable:284272231,vPagado:276153015,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:11,obs:""},
+  {codigo:"C-25-003",cliente:"MARROQUINERA S.A.S.",proyecto:"Mario Hernandez Outlet Americas",estado:"Finalizado",sector:"Retail",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:7,valor:622685912,liqSN:539648050,difCNpct:8.46,difSN:83037862,difSNpct:13.34,vContable:654582318,vPagado:617750760,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:74,obs:""},
+  {codigo:"C-25-004",cliente:"PLENTIA CAPITAL S.A.S",proyecto:"Dollarcity y Kokoriko Melgar",estado:"Finalizado",sector:"Retail",ciudad:"Melgar",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:11,valor:2885310099,liqSN:2354313273,difCNpct:16.1,difSN:530996826,difSNpct:18.4,vContable:2890298794,vPagado:2818159360,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:87,obs:""},
+  {codigo:"C-25-005",cliente:"MAPFRE SEGUROS GENERALES DE COLOMBIA S.A",proyecto:"MAPFRE Auditorio CISMAP",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Camila Duran",cargo:"Directora de Proyectos",anio:2025,mes:5,valor:413631659,liqSN:325699504,difCNpct:14.18,difSN:87932155,difSNpct:21.26,vContable:413631659,vPagado:399763958,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-006",cliente:"COLTABACO SAS",proyecto:"Oficinas Coltabaco Medellín",estado:"Finalizado",sector:"Corporativo",ciudad:"Medellín",encargado:"Pablo Alfonso",cargo:"Director de Proyectos",anio:2025,mes:6,valor:1158277148,liqSN:994113100,difCNpct:11.36,difSN:164164048,difSNpct:14.17,vContable:1126598761,vPagado:1073657509,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:16,obs:""},
+  {codigo:"C-25-008",cliente:"SURAMERICANA COMERCIAL SAS",proyecto:"Dollarcity CC Centro Chía",estado:"Finalizado",sector:"Retail",ciudad:"Chia",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:6,valor:462456448,liqSN:328573576,difCNpct:24.09,difSN:133882872,difSNpct:28.95,vContable:462456448,vPagado:452735113,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:1,obs:""},
+  {codigo:"C-25-009",cliente:"MONTECITO SAS",proyecto:"Diseño Isla Morada",estado:"Finalizado",sector:"Diseño",ciudad:"Sopo Cundinamarca",encargado:"Sofia Granados",cargo:"Directora Creativa",anio:2025,mes:6,valor:49313600,liqSN:29588160,difCNpct:20,difSN:19725440,difSNpct:40,vContable:49313600,vPagado:35538944,pxCobrar:9862720,pxFacturar:0,avObra:100,avLiq:100,dias:12,obs:""},
+  {codigo:"C-25-010",cliente:"PAULA MORENO",proyecto:"Apto Paula Moreno",estado:"Finalizado",sector:"Vivienda",ciudad:"Bogotá",encargado:"Pablo Alfonso",cargo:"Director de Proyectos",anio:2025,mes:7,valor:285273513,liqSN:236375378,difCNpct:8.01,difSN:48898135,difSNpct:17.14,vContable:276494997,vPagado:276494997,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-011",cliente:"MAPFRE SEGUROS GENERALES DE COLOMBIA S.A",proyecto:"Diseño Fachada MAPFRE",estado:"Finalizado",sector:"Diseño",ciudad:"Bogotá",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:2025,mes:7,valor:11755200,liqSN:7053120,difCNpct:20,difSN:4702080,difSNpct:40,vContable:13988688,vPagado:1331761,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-012",cliente:"CENTRO DE SISTEMAS DE ANTIOQUIA S.A.S.",proyecto:"HQ La Playa Medellín",estado:"Finalizado",sector:"Corporativo",ciudad:"Medellín",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:7,valor:2688116673,liqSN:2077685962,difCNpct:21.65,difSN:610430711,difSNpct:22.71,vContable:2688116673,vPagado:2637496826,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-013",cliente:"C3 CONSTRUCCIONES Y CONTRATOS SAS",proyecto:"Rediseño Edificio Vatia",estado:"Finalizado",sector:"Diseño",ciudad:"Cali",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:2025,mes:7,valor:20964230,liqSN:12578538,difCNpct:20,difSN:8385692,difSNpct:40,vContable:20964230,vPagado:7348686,pxCobrar:12578537,pxFacturar:12578538,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-014",cliente:"BANCOLOMBIA SA",proyecto:"Bancolombia Carrera 8",estado:"Finalizado",sector:"Bancario",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2025,mes:7,valor:357552489,liqSN:284680858,difCNpct:16.18,difSN:72871631,difSNpct:20.38,vContable:357552489,vPagado:347380278,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-015",cliente:"INVERSIONES VALENCIA ASOCIADOS SAS",proyecto:"Café SOCA CC Multiplaza Bogotá",estado:"Finalizado",sector:"Retail",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:7,valor:321055308,liqSN:272897012,difCNpct:15,difSN:48158296,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-016",cliente:"PRODUCTORA Y COMERCIALIZADORA DE ALIMENTOS S.A.S",proyecto:"MIMOS",estado:"Finalizado",sector:"Retail",ciudad:"Bucaramanga",encargado:"Otro",cargo:"Otro",anio:2025,mes:7,valor:50995138,liqSN:43345867,difCNpct:15,difSN:7649271,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-017",cliente:"AUTOFINANCIERA COLOMBIA S.A.",proyecto:"Diseño Arq. y Técnico Autofinanciera",estado:"Finalizado",sector:"Diseño",ciudad:"Bogotá",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:2025,mes:7,valor:20518575,liqSN:17440789,difCNpct:15,difSN:3077786,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-018",cliente:"INVERSIONES JMH SAS",proyecto:"Regus Santafé Drywall y Pintura",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Harold Gonzales",cargo:"Director de Proyectos",anio:2025,mes:7,valor:611601984,liqSN:519861686,difCNpct:15,difSN:91740298,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-019",cliente:"CBRE COLOMBIA SAS",proyecto:"GSK Adecuaciones Internas Oficinas",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Pablo Alfonso",cargo:"Director de Proyectos",anio:2025,mes:7,valor:437875784,liqSN:372194416,difCNpct:15,difSN:65681368,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-023",cliente:"REGUS COLOMBIA LIMITADA",proyecto:"Regus Calle 90 Urban Plaza",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2025,mes:8,valor:149059293,liqSN:126700399,difCNpct:15,difSN:22358894,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-024",cliente:"MAPFRE SEGUROS GENERALES DE COLOMBIA S.A",proyecto:"Adecuaciones Eléctricas Auditorio CISMAP",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2025,mes:8,valor:10393063,liqSN:8834104,difCNpct:15,difSN:1558959,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-025",cliente:"TERRANUM DESARROLLO S.A.S.",proyecto:"Terranum Connecta 80 Fase III",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2025,mes:8,valor:430312650,liqSN:365765752,difCNpct:15,difSN:64546898,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-026",cliente:"SURAMERICANA COMERCIAL SAS",proyecto:"Tienda Dollarcity Melgar",estado:"Finalizado",sector:"Retail",ciudad:"Melgar",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2025,mes:8,valor:510808056,liqSN:434186848,difCNpct:15,difSN:76621208,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-027",cliente:"COLEGIO MAYOR DE NUESTRA SEÑORA DEL ROSARIO",proyecto:"U. Rosario - Los Ángeles",estado:"En Liquidación",sector:"Obra Civil",ciudad:"Bogotá",encargado:"Harold Gonzales",cargo:"Director de Proyectos",anio:2026,mes:5,valor:1064013371,liqSN:737697500,difCNpct:20.69,difSN:326315871,difSNpct:30.67,vContable:1030897725,vPagado:879248508,pxCobrar:117981868,pxFacturar:0,avObra:100,avLiq:100,dias:95,obs:""},
+  {codigo:"C-25-028",cliente:"REGUS COLOMBIA LIMITADA",proyecto:"Adecuaciones Edificio QBO",estado:"Finalizado",sector:"Facilities",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2026,mes:5,valor:8889300,liqSN:7555905,difCNpct:15,difSN:1333395,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-029",cliente:"REGUS COLOMBIA LIMITADA",proyecto:"Adecuaciones Oficinas Conecta 80",estado:"Finalizado",sector:"Facilities",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2026,mes:5,valor:26230080,liqSN:22295568,difCNpct:15,difSN:3934512,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-030",cliente:"SURAMERICANA COMERCIAL S.A.S.",proyecto:"Tienda Dollarcity Nomad Salitre",estado:"Finalizado",sector:"Retail",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:5,valor:652610311,liqSN:554718764,difCNpct:15,difSN:97891547,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-031",cliente:"INVERSIONES VALENCIA ASOCIADOS S.A.S.",proyecto:"Café SOCA Héroes",estado:"Finalizado",sector:"Retail",ciudad:"Bogotá",encargado:"Harold Gonzales",cargo:"Director de Proyectos",anio:2026,mes:5,valor:358227930,liqSN:304493740,difCNpct:15,difSN:53734190,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-032",cliente:"OFICINAS MULTIPLIKA - FACILITIES",proyecto:"PEI",estado:"En Ejecución",sector:"Facilities",ciudad:"Bogotá",encargado:"Juan Gabriel Pachon",cargo:"Coordinador de Facilities",anio:2026,mes:5,valor:41412000,liqSN:35200200,difCNpct:15,difSN:6211800,difSNpct:15,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-033",cliente:"MAPFRE SEGUROS GENERALES DE COLOMBIA S.A",proyecto:"MAPFRE Fachada Morato",estado:"En Liquidación",sector:"Otros",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2026,mes:3,valor:1648760133,liqSN:1188732751,difCNpct:25.42,difSN:460027382,difSNpct:27.9,vContable:1752846977,vPagado:1182204605,pxCobrar:513687298,pxFacturar:245263186,avObra:0,avLiq:0,dias:88,obs:""},
+  {codigo:"C-25-035",cliente:"CARLOS NIETO",proyecto:"Carlos Nieto - Cr 19",estado:"En Liquidación",sector:"Retail",ciudad:"Bogotá",encargado:"Alejandro Pacheco",cargo:"Director de Proyectos",anio:2026,mes:4,valor:822522648,liqSN:698914882,difCNpct:10.68,difSN:123607766,difSNpct:15.03,vContable:980580718,vPagado:774758368,pxCobrar:177253184,pxFacturar:98058070,avObra:0,avLiq:0,dias:54,obs:""},
+  {codigo:"C-25-036",cliente:"REGUS COLOMBIA LIMITADA",proyecto:"Regus Urban Plaza Fase 3 Calle 90",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Gabriel Vinasco",cargo:"Director de Facilities",anio:2026,mes:4,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-037",cliente:"TERRANUM DESARROLLO S.A.S.",proyecto:"Acabados BTS 3 Piso 3 Connecta Calle 26",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2026,mes:4,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-004",cliente:"Marroquineria SAS",proyecto:"Mario Hernandez - Bulevar Niza",estado:"En Liquidación",sector:"Retail",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2026,mes:4,valor:666961943,liqSN:452106993,difCNpct:47.52,difSN:214854950,difSNpct:32.21,vContable:662305497,vPagado:450000000,pxCobrar:193331329,pxFacturar:61020944,avObra:100,avLiq:100,dias:2,obs:""},
+  {codigo:"C-26-005",cliente:"Frisby S.A BIC",proyecto:"Frisby Terminal de Carga",estado:"En Liquidación",sector:"Hospitality",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:3,valor:59380860,liqSN:41739581,difCNpct:42.27,difSN:17641279,difSNpct:29.71,vContable:59380860,vPagado:28833353,pxCobrar:29690430,pxFacturar:29690430,avObra:100,avLiq:95,dias:-2,obs:""},
+  {codigo:"C-26-006",cliente:"Hoteles Estelar S.A",proyecto:"Intercontinental - Fase 1",estado:"En Ejecución",sector:"Hospitality",ciudad:"Cali",encargado:"Luis Mantilla",cargo:"Director Senior Proyectos",anio:2026,mes:7,valor:1776819100,liqSN:1439223471,difCNpct:23.46,difSN:337595629,difSNpct:19,vContable:10920592080,vPagado:953911380,pxCobrar:9962633377,pxFacturar:10729370729,avObra:40,avLiq:20,dias:29,obs:""},
+  {codigo:"C-26-007",cliente:"Marroquineria SAS",proyecto:"Mario Hernandez - Av Chile",estado:"Garantias",sector:"Retail",ciudad:"Bogotá",encargado:"Alejandro Pacheco",cargo:"Director de Proyectos",anio:2026,mes:5,valor:813215525,liqSN:469430759,difCNpct:73.23,difSN:313880136,difSNpct:38.6,vContable:838955150,vPagado:457000000,pxCobrar:361527768,pxFacturar:196184897,avObra:95,avLiq:70,dias:-7,obs:""},
+  {codigo:"C-26-008",cliente:"Frisby S.A BIC",proyecto:"Frisby Pitalito",estado:"En Liquidación",sector:"Retail",ciudad:"Huila",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:4,valor:48726725,liqSN:39608896,difCNpct:23.02,difSN:9117829,difSNpct:18.71,vContable:48726725,vPagado:23682826,pxCobrar:24363364,pxFacturar:24363362,avObra:100,avLiq:95,dias:1,obs:""},
+  {codigo:"C-26-009",cliente:"Grupo Ethus",proyecto:"IAE",estado:"En Ejecución",sector:"Corporativo",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:8,valor:4804104491,liqSN:3113878985,difCNpct:54.28,difSN:1638612173,difSNpct:34.11,vContable:4675657089,vPagado:1976330468,pxCobrar:2617580959,pxFacturar:1807922292,avObra:50,avLiq:50,dias:48,obs:""},
+  {codigo:"C-26-011",cliente:"Grupo Ethus",proyecto:"Terraza Piso 17",estado:"Cerrado",sector:"Corporativo",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:8,valor:270088406,liqSN:218771609,difCNpct:23.46,difSN:51316797,difSNpct:19,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-013",cliente:"Grupo Ethus",proyecto:"Apartamento Bosheto",estado:"En Liquidación",sector:"Vivienda",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:5,valor:90670281,liqSN:67113619,difCNpct:35.1,difSN:18089404,difSNpct:19.95,vContable:90670281,vPagado:24427817,pxCobrar:64443789,pxFacturar:0,avObra:91,avLiq:70,dias:17,obs:""},
+  {codigo:"C-26-012",cliente:"",proyecto:"Diseño Miniso Zona T",estado:"En Ejecución",sector:"Diseño",ciudad:"Bogota",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:null,mes:null,valor:72279648,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-014",cliente:"Conconcreto",proyecto:"Sala de Ventas Moderno",estado:"En Liquidación",sector:"Vivienda",ciudad:"Bogotá",encargado:"Alejandro Pacheco",cargo:"Director de Proyectos",anio:2026,mes:4,valor:107887129,liqSN:66439073,difCNpct:62.39,difSN:38590642,difSNpct:35.77,vContable:107887129,vPagado:28655986,pxCobrar:74374237,pxFacturar:0,avObra:100,avLiq:100,dias:-6,obs:""},
+  {codigo:"C-26-016",cliente:"Hoteles Estelar S.A",proyecto:"Salones Hotel Inter",estado:"En Ejecución",sector:"Hospitality",ciudad:"Cali",encargado:"Luis Mantilla",cargo:"Director Senior Proyectos",anio:2026,mes:4,valor:383554989,liqSN:249310743,difCNpct:53.85,difSN:72875448,difSNpct:19,vContable:383554989,vPagado:190057923,pxCobrar:193497066,pxFacturar:383554989,avObra:30,avLiq:20,dias:-66,obs:""},
+  {codigo:"C-26-017",cliente:"Inversiones Valencia Asociados S.A.S.",proyecto:"Centro de experiencia SOCA",estado:"En Liquidación",sector:"Retail",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:4,valor:30531551,liqSN:24730556,difCNpct:23.46,difSN:5800995,difSNpct:19,vContable:30531551,vPagado:10000000,pxCobrar:19923799,pxFacturar:6106310,avObra:90,avLiq:0,dias:-44,obs:""},
+  {codigo:"C-26-019",cliente:"Grupo Ethus",proyecto:"Reparaciones locativas - Interaseo piso 11",estado:"En Liquidación",sector:"Corporativo",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:4,valor:71281334,liqSN:57737881,difCNpct:23.46,difSN:13543453,difSNpct:19,vContable:71281334,vPagado:0,pxCobrar:69168152,pxFacturar:0,avObra:85,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-020",cliente:"Aruma",proyecto:"Tienda Aruma Salitre",estado:"En Liquidación",sector:"Retail",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:6,valor:291201376,liqSN:235873115,difCNpct:23.46,difSN:55328261,difSNpct:19,vContable:291201381,vPagado:145600690,pxCobrar:145600691,pxFacturar:0,avObra:100,avLiq:90,dias:0,obs:""},
+  {codigo:"C-26-021",cliente:"Mall Plaza",proyecto:"Paisajismo Mall plaza",estado:"En Ejecución",sector:"Hospitality",ciudad:"Cali",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:6,valor:218786945,liqSN:177217425,difCNpct:23.46,difSN:41569520,difSNpct:19,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-022",cliente:"Aruma",proyecto:"Acometida - Aruma Salitre",estado:"En Liquidación",sector:"Retail",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:6,valor:16357836,liqSN:13249847,difCNpct:23.46,difSN:3107989,difSNpct:19,vContable:16357836,vPagado:8178918,pxCobrar:8178918,pxFacturar:16357836,avObra:0,avLiq:5,dias:0,obs:""},
+  {codigo:"C-26-023",cliente:"Andrea Cuervo",proyecto:"Apartamento 302",estado:"En Ejecución",sector:"Vivienda",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2026,mes:6,valor:160120045,liqSN:0,difCNpct:0,difSN:160120045,difSNpct:100,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:20,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-024",cliente:"Terranum",proyecto:"Terranum Cortezza",estado:"En Ejecución",sector:"Corporativo",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:6,valor:729945412,liqSN:474464518,difCNpct:53.85,difSN:138689628,difSNpct:19,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-025",cliente:"Zephire",proyecto:"Zephire",estado:"En Ejecución",sector:"Retail",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:6,valor:195751173,liqSN:127238262,difCNpct:53.85,difSN:39150235,difSNpct:20,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:-19,obs:""},
+  {codigo:"C-26-026",cliente:"Sodimac",proyecto:"Pet Center",estado:"En Ejecución",sector:"Retail",ciudad:"Pereira",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:6,valor:1148231739,liqSN:803762217,difCNpct:42.86,difSN:183717078,difSNpct:16,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-027",cliente:"Cinepolis",proyecto:"Adecuaciones Baños Cinepolis Plaza Claro",estado:"Por Iniciar",sector:"Otros",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:6,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-038",cliente:"Colegio Mayor de Nuestra Señora del Rosario",proyecto:"Laboratorios Quinta Mutis",estado:"En Ejecución",sector:"Obra Civil",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:2026,mes:7,valor:5252844579,liqSN:4088317501,difCNpct:28.48,difSN:480560804,difSNpct:9.15,vContable:4088317501,vPagado:0,pxCobrar:4088317501,pxFacturar:4088317501,avObra:55,avLiq:50,dias:0,obs:""},
+  {codigo:"C-25-039",cliente:"COLTABACO SAS",proyecto:"Oficinas Coltabaco Bogota Edificio Naos",estado:"Finalizado",sector:"Corporativo",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-040",cliente:"GRUPO ETHUS",proyecto:"Edemsa Piso 16",estado:"Garantias",sector:"Corporativo",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:2,valor:2407596525,liqSN:1734299760,difCNpct:38.82,difSN:637579294,difSNpct:26.48,vContable:2139571912,vPagado:1402406701,pxCobrar:939710386,pxFacturar:271293330,avObra:0,avLiq:0,dias:-3,obs:""},
+  {codigo:"C-25-041",cliente:"ELÉCTRICAS DE MEDELLÍN - INGENIERÍA Y SERVICIOS S.A.S. - EDEMSA",proyecto:"Diseño Oficinas Edemsa Medellin (grupo Ethuss)",estado:"En Liquidación",sector:"Diseño",ciudad:"Medellin",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:2025,mes:11,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:29,obs:""},
+  {codigo:"C-25-042",cliente:"BRICKS S.A.S.",proyecto:"Diseño Oficina 812 Edifico Citibank (grupo Ethuss)",estado:"En Liquidación",sector:"Diseño",ciudad:"Bogotá",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-043",cliente:"MARROQUINERA S.A.S.",proyecto:"Carros de Personalizacion Mario Hernandez",estado:"En Liquidación",sector:"Otros",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-044",cliente:"MAPFRE SEGUROS GENERALES DE COLOMBIA S.A",proyecto:"Construccion Fachada Edificio 93",estado:"Finalizado",sector:"Otros",ciudad:"Bogotá",encargado:"Giovanny Velasquez",cargo:"Coordinador de Proyectos",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:100,avLiq:100,dias:0,obs:""},
+  {codigo:"C-25-045",cliente:"REGUS COLOMBIA LIMITADA",proyecto:"Diseños Tecnicos Oficinas Nubank Piso 4 - Spaces 80/10",estado:"En Liquidación",sector:"Diseño",ciudad:"Bogotá",encargado:"Ricardo Ariza",cargo:"Director Ejecutivo Diseño",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-25-046",cliente:"REGUS COLOMBIA LTDA",proyecto:"Nubank Space 8011",estado:"En Liquidación",sector:"Corporativo",ciudad:"Bogotá",encargado:"Andres Rodriguez",cargo:"Director de Obras",anio:2026,mes:4,valor:2117089121,liqSN:1672500406,difCNpct:26.58,difSN:444588715,difSNpct:21,vContable:2117089031,vPagado:2114495031,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:54,obs:""},
+  {codigo:"C-25-048",cliente:"GRUPO ETHUS",proyecto:"We Group",estado:"Garantias",sector:"Corporativo",ciudad:"Bogotá",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:3,valor:703499282,liqSN:622693841,difCNpct:12.98,difSN:80805441,difSNpct:11.49,vContable:688182995,vPagado:536704250,pxCobrar:131947632,pxFacturar:0,avObra:0,avLiq:0,dias:8,obs:""},
+  {codigo:"C-26-010",cliente:"GRUPO ETHUS",proyecto:"Interaseo Piso 15",estado:"Cerrado",sector:"Corporativo",ciudad:"Medellin",encargado:"Jeison Cera",cargo:"Director de Obras",anio:2026,mes:8,valor:22772316,liqSN:9498095,difCNpct:139.76,difSN:6651679,difSNpct:29.21,vContable:13949867,vPagado:0,pxCobrar:13949867,pxFacturar:13949867,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-028",cliente:"GRUPO ETHUS",proyecto:"Diseño Terraza Piso 17",estado:"En Ejecución",sector:"Corporativo",ciudad:"",encargado:"Sin asignar",cargo:"",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-029",cliente:"GRUPO ETHUS",proyecto:"Diseño Piso 2",estado:"En Ejecución",sector:"Corporativo",ciudad:"",encargado:"Sin asignar",cargo:"",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-030",cliente:"GRUPO ETHUS",proyecto:"Diseños Arquitectonicos y Tecnicos Piso 15 - Interaseo",estado:"En Ejecución",sector:"Corporativo",ciudad:"",encargado:"Sin asignar",cargo:"",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""},
+  {codigo:"C-26-031",cliente:"ANDREA CUERVO",proyecto:"Apto 302 - Calle 85 (mobiliario)",estado:"En Ejecución",sector:"Vivienda",ciudad:"",encargado:"Sin asignar",cargo:"",anio:null,mes:null,valor:0,liqSN:0,difCNpct:0,difSN:0,difSNpct:0,vContable:0,vPagado:0,pxCobrar:0,pxFacturar:0,avObra:0,avLiq:0,dias:0,obs:""}
+];
+const EC={"Finalizado":"#e8622a","En Ejecución":"#f7c400","En Liquidación":"#a82c00","Garantias":"#7a1010","Por Iniciar":"#ffaa44","Cerrado":"#9e8c80"};
+const EB={"Finalizado":"eb-fin","En Ejecución":"eb-ejec","En Liquidación":"eb-liq","Garantias":"eb-gar","Por Iniciar":"eb-ini","Cerrado":"eb-cerr"};
+const fmtMM=v=>{if(!v||isNaN(v)||v===0)return"—";const mm=v/1e6;if(mm>=1000)return"$"+(v/1e9).toFixed(2)+" MM";if(mm>=1)return"$"+Math.round(mm)+" M";return"$"+Math.round(v/1e3)+" K";};
+const fmtPct=v=>v?v.toFixed(1)+"%":"—";
+const hCol=v=>v>=85?"#1a8a52":v>=60?"#c08a00":"#c0392b";
+let filteredProjects=[...PROJECTS];
+
+const PROJ_DETAIL={
+  /* ── C-25-001: Terranum Connecta 80 Fase I ── datos reales Google Sheets */
+  "C-25-001":{
+    curvaS:[
+      {s:"Sem 1",prog:5,real:1},{s:"Sem 2",prog:21,real:16},
+      {s:"Sem 3",prog:46,real:42},{s:"Sem 4",prog:67,real:65},
+      {s:"Sem 5",prog:83,real:80},{s:"Sem 6",prog:100,real:98},
+      {s:"Sem 7",prog:100,real:100}
+    ],
+    capitulos:null
+  },
+  /* ── C-26-009: Oficinas IAE ── datos extraídos del informe PDF */
+  "C-26-009":{
+    curvaS:[
+      {s:"Mar W1",prog:2,real:2},{s:"Mar W2",prog:5,real:4},{s:"Mar W3",prog:9,real:8},
+      {s:"Abr W1",prog:14,real:13},{s:"Abr W2",prog:20,real:18},{s:"Abr W3",prog:27,real:25},
+      {s:"Abr W4",prog:33,real:31},{s:"May W1",prog:39,real:37},{s:"May W2",prog:44,real:42},
+      {s:"May W3",prog:50,real:48},{s:"May W4",prog:55,real:53},{s:"Jun W1",prog:60,real:57},
+      {s:"Jun W2",prog:64,real:61},{s:"Jun W3",prog:67,real:63},{s:"Jun W4",prog:70,real:66}
+    ],
+    capitulos:[
+      {cap:"Preliminares",prog:100,real:100},{cap:"Muros y Cielorasos",prog:100,real:95},
+      {cap:"Voz y Datos",prog:68,real:61},{cap:"Audio y Video",prog:88,real:100},
+      {cap:"Seguridad y Control",prog:68,real:50},{cap:"Mecánicas",prog:63,real:65},
+      {cap:"Pisos y Enchapes",prog:100,real:93},{cap:"Pintura",prog:46,real:21},
+      {cap:"Cielorasos Especiales",prog:78,real:58},{cap:"Sistemas Acústicos",prog:62,real:55},
+      {cap:"Iluminación",prog:74,real:59},{cap:"Carpintería Alum.",prog:94,real:78}
+    ]
+  }
+};
+
+
+
+let curvaSChart,donutChart,sectorChart,encChart,snChart,curvaSDetailChart,capDetailChart;
+
+const PAGE_TITLES={resumen:["RESUMEN EJECUTIVO","Portafolio de proyectos"],proyectos:["PROYECTOS","Listado completo del portafolio"],directores:["DIRECTORES","Desempeño por director"],alertas:["ALERTAS","Observaciones y riesgos activos"],financiero:["CONTROL FINANCIERO","Análisis de márgenes y cartera"],ficha:["FICHA EJECUTIVA","Detalle del proyecto"],flujocaja:["FLUJO DE CAJA","Control de hitos de cobro — próximas 12 semanas"]};
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  else document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');});
+  const t=PAGE_TITLES[id]||[id.toUpperCase(),""];
+  document.getElementById('page-title').textContent=t[0];
+  document.getElementById('page-sub').textContent=t[1];
+  updateTopbarSub();
+  document.getElementById('main-content').scrollTop=0;
+}
+
+function applyFilters(){
+  const an=document.getElementById('fil-anio').value;
+  const mn=document.getElementById('fil-mes').value;
+  const en=document.getElementById('fil-enc').value;
+  const es=document.getElementById('fil-estado').value;
+  const sc=document.getElementById('fil-sector').value;
+  filteredProjects=PROJECTS.filter(p=>{
+    if(an!=='todos'&&p.anio!=an)return false;
+    if(mn!=='todos'&&p.mes!=mn)return false;
+    if(en!=='todos'&&p.encargado!==en)return false;
+    if(es!=='todos'&&p.estado!==es)return false;
+    if(sc!=='todos'&&p.sector!==sc)return false;
+    return true;
+  });
+  buildKPIs();buildFinanceBar();buildDonut();buildRisks();buildHealth();buildActions();buildSector();
+  buildProjects();buildEstadoFilters();buildDirectores();buildAlertas();buildFinanciero();buildComparativo();
+  buildFlujoCaja();
+}
+
+const MESES_NOM=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function populateFilters(){
+  const fa=document.getElementById('fil-anio');
+  [...new Set(PROJECTS.map(p=>p.anio).filter(a=>a))].sort().forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;fa.appendChild(o);});
+  const fm=document.getElementById('fil-mes');
+  [...new Set(PROJECTS.map(p=>p.mes).filter(m=>m))].sort((a,b)=>a-b).forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=MESES_NOM[m];fm.appendChild(o);});
+  const fe=document.getElementById('fil-enc');
+  [...new Set(PROJECTS.map(p=>p.encargado))].sort().forEach(e=>{const o=document.createElement('option');o.textContent=e;fe.appendChild(o);});
+  const fs=document.getElementById('fil-sector');
+  [...new Set(PROJECTS.map(p=>p.sector).filter(s=>s))].sort().forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;fs.appendChild(o);});
+}
+
+function buildKPIs(){
+  const fp=filteredProjects;
+  const kpis=[
+    {n:fp.length,l:"Total proyectos",ic:"total",c:"#e8622a"},
+    {n:fp.filter(p=>p.estado==="Finalizado").length,l:"Finalizados",ic:"fin",c:"#5a8a5a"},
+    {n:fp.filter(p=>p.estado==="En Ejecución").length,l:"En ejecución",ic:"ejec",c:"#1a8a52"},
+    {n:fp.filter(p=>p.estado==="En Liquidación").length,l:"En liquidación",ic:"liq",c:"#c08a00"},
+    {n:fp.filter(p=>p.estado==="Por Iniciar").length,l:"Por iniciar",ic:"ini",c:"#4a3aa7"},
+    {n:fp.filter(p=>p.estado==="Cerrado").length,l:"Cerrados",ic:"cerr",c:"#6b6b66"},
+    {n:fp.filter(p=>p.estado==="Garantias").length,l:"Garantías",ic:"gar",c:"#1a5fa5"},
+  ];
+  const svgs=['<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>','<circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/>','<polygon points="5 3 19 12 5 21 5 3"/>','<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','<path d="M5 12l5-5 5 5 5-5"/>','<polyline points="20 6 9 17 4 12"/>','<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'];
+  document.getElementById('kpi-strip').innerHTML=kpis.map((k,i)=>`
+    <div class="kpi"><div class="kpi-ico ${k.ic}"><svg width="16" height="16" fill="none" stroke="${k.c}" stroke-width="1.8" viewBox="0 0 24 24">${svgs[i]}</svg></div>
+    <div><div class="kpi-num">${k.n}</div><div class="kpi-lbl">${k.l}</div></div></div>`).join('');
+}
+
+function buildFinanceBar(){
+  const fp=filteredProjects;
+  const tv=fp.reduce((a,p)=>a+(p.valor||0),0);
+  const tf=fp.reduce((a,p)=>a+(p.pxFacturar||0),0);
+  const tc=fp.reduce((a,p)=>a+(p.pxCobrar||0),0);
+  const as=fp.filter(p=>p.difSNpct>0).length?fp.reduce((a,p)=>a+(p.difSNpct||0),0)/fp.filter(p=>p.difSNpct>0).length:0;
+  const ac=fp.filter(p=>p.difCNpct>0&&p.difCNpct<200).length?fp.reduce((a,p)=>a+(p.difCNpct<200?p.difCNpct||0:0),0)/fp.filter(p=>p.difCNpct>0&&p.difCNpct<200).length:0;
+  document.getElementById('finance-bar').innerHTML=`
+    <div class="finance-bar-lbl">Desempeño<br>financiero</div>
+    <div class="finance-item"><div class="fn">${fmtMM(tv)}</div><div class="fl">Valor total (COP)</div></div>
+    <div class="finance-item"><div class="fn">${fmtMM(tf)}</div><div class="fl">Pendiente facturar</div><div class="fd neg">▼ Gestión requerida</div></div>
+    <div class="finance-item"><div class="fn">${fmtMM(tc)}</div><div class="fl">Pendiente cobrar</div><div class="fd neg">▼ Cartera activa</div></div>
+    <div class="finance-item"><div class="fn">${as.toFixed(1)}%</div><div class="fl">Diferencia SN prom.</div></div>
+    <div class="finance-item"><div class="fn">${ac.toFixed(1)}%</div><div class="fl">Diferencia CN prom.</div></div>`;
+  const ftc=document.getElementById('fin-total-count');if(ftc)ftc.textContent=fp.length+' proyectos';
+  const ft=document.getElementById('fin-total'),ff=document.getElementById('fin-fact'),fc=document.getElementById('fin-cobr');
+  if(ft)ft.textContent=fmtMM(tv);if(ff)ff.textContent=fmtMM(tf);if(fc)fc.textContent=fmtMM(tc);
+}
+
+function buildDonut(){
+  const counts={};filteredProjects.forEach(p=>{counts[p.estado]=(counts[p.estado]||0)+1;});
+  const labels=Object.keys(counts),data=labels.map(l=>counts[l]),colors=labels.map(l=>EC[l]||"#888");
+  if(donutChart)donutChart.destroy();
+  donutChart=new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:6,borderColor:'#faf9f7',borderRadius:8,spacing:4,hoverOffset:8}]},
+    options:{responsive:false,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/filteredProjects.length*100)}%)`}}},
+      animation:{animateRotate:true,duration:700}
+    }
+  });
+  const total=filteredProjects.length;
+  document.getElementById('donut-center-text').innerHTML=`<div class="donut-big-n">${total}</div><div class="donut-sub">proyectos</div>`;
+  document.getElementById('donut-legend').innerHTML=labels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l}</span><span class="legend-n">${data[i]}</span></div>`).join('');
+}
+
+function buildRisks(){
+  const risks=[{proj:"IAE — C-26-009",desc:"Retraso 48 días. Cronograma crítico.",nivel:"alta"},{proj:"Intercontinental",desc:"Cartera pendiente masiva. Anomalía contable.",nivel:"alta"},{proj:"Av Chile — C-26-007",desc:"Diferencia SN 44.3% — revisar margen real.",nivel:"media"},{proj:"Reparaciones P11",desc:"Sin documentación contractual básica.",nivel:"media"},{proj:"SOCA — C-26-017",desc:"Sin actas, cronograma, informes ni preliq.",nivel:"media"}];
+  document.getElementById('risk-list').innerHTML=risks.map(r=>`<div class="risk-row"><span class="rbadge ${r.nivel}">${r.nivel.toUpperCase()}</span><div><div class="risk-proj">${r.proj}</div><div class="risk-desc">${r.desc}</div></div></div>`).join('');
+}
+
+function buildHealth(){
+  const items=[{lbl:"Cronograma",pct:70},{lbl:"Financiero",pct:72},{lbl:"Facturación",pct:65},{lbl:"Cartera",pct:55},{lbl:"Documentación",pct:60}];
+  document.getElementById('health-list').innerHTML=items.map(h=>`<div class="health-row"><div class="health-lbl">${h.lbl}</div><div class="hbar-bg"><div class="hbar-fill" style="width:${h.pct}%;background:${hCol(h.pct)}"></div></div><div class="health-pct" style="color:${hCol(h.pct)}">${h.pct}%</div><div class="hdot" style="background:${hCol(h.pct)}"></div></div>`).join('');
+}
+
+function buildActions(){
+  const actions=[{proj:"IAE",desc:"Implementar plan de choque en actividades críticas",resp:"Jeison Cera",prio:"alta"},{proj:"Intercontinental",desc:"Gestionar recaudo y verificar valor contable",resp:"Luis Mantilla",prio:"alta"},{proj:"Reparaciones P11",desc:"Completar documentación básica faltante",resp:"Jeison Cera",prio:"media"},{proj:"SOCA",desc:"Cargar actas, informes y preliquidación",resp:"Andres R.",prio:"media"},{proj:"Av Chile",desc:"Cerrar acta de entrega pendiente",resp:"Alejandro P.",prio:"baja"}];
+  document.getElementById('action-list').innerHTML=actions.map(a=>`<div class="action-row"><div class="aproj">${a.proj}</div><div class="adesc">${a.desc}</div><div class="aresp">${a.resp}</div><span class="pbadge ${a.prio}">${a.prio.toUpperCase()}</span></div>`).join('');
+}
+
+function buildSector(){
+  const sec={};PROJECTS.forEach(p=>{if(p.sector)sec[p.sector]=(sec[p.sector]||0)+1;});
+  const sorted=Object.entries(sec).sort((a,b)=>b[1]-a[1]);
+  const colors=["#e8622a","#f5a623","#d94f00","#f7c948","#c0392b","#8c7b6e","#e8905a"];
+  if(sectorChart)sectorChart.destroy();
+  sectorChart=new Chart(document.getElementById('sectorChart'),{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{data:sorted.map(s=>s[1]),backgroundColor:colors,borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:"#6b6b66",font:{size:10}},border:{display:false}},y:{grid:{display:false},ticks:{color:"#6b6b66",font:{size:10}},border:{display:false}}}}});
+}
+
+function buildProjects(estadoFilter){
+  const fp=estadoFilter&&estadoFilter!=="Todos"?filteredProjects.filter(p=>p.estado===estadoFilter):filteredProjects;
+  document.getElementById('proj-tbody').innerHTML=fp.map(p=>{
+    const cls=EB[p.estado]||"eb-cerr";
+    const avC=p.avObra>=75?"#1a8a52":p.avObra>=40?"#c08a00":"#c0392b";
+    const snC=p.difSNpct>35?"td-neg":p.difSNpct>25?"td-warn":"td-ok";
+    return`<tr data-cod="${p.codigo}" onclick="showProjDetail('${p.codigo}');openFicha('${p.codigo}')">
+      <td class="td-code">${p.codigo}</td>
+      <td class="td-primary" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.proyecto}</td>
+      <td>${p.cliente}</td><td><span class="estado-badge ${cls}">${p.estado}</span></td>
+      <td>${p.encargado}</td><td>${p.ciudad||"—"}</td>
+      <td class="td-money" style="text-align:right">${fmtMM(p.valor)}</td>
+      <td class="td-money" style="text-align:right;color:${p.pxCobrar>500000000?"#c0392b":"inherit"}">${fmtMM(p.pxCobrar)}</td>
+      <td class="${snC}" style="text-align:right">${fmtPct(p.difSNpct)}</td>
+      <td><div style="display:flex;align-items:center;gap:5px"><div class="av-bar"><div class="av-fill" style="width:${p.avObra}%;background:${avC}"></div></div><span style="font-size:10px;color:#6b6b66">${p.avObra}%</span></div></td>
+    </tr>`;}).join('');
+}
+
+function buildEstadoFilters(){
+  const estados=["Todos","Finalizado","En Ejecución","En Liquidación","Garantias","Por Iniciar","Cerrado"];
+  const el=document.getElementById('estado-filters');el.innerHTML='';
+  estados.forEach((e,i)=>{
+    const btn=document.createElement('button');btn.className='pfbtn'+(i===0?' active':'');
+    btn.textContent=e+(e!=="Todos"?' ('+filteredProjects.filter(p=>p.estado===e).length+')':'');
+    btn.onclick=function(){document.querySelectorAll('.pfbtn').forEach(b=>b.classList.remove('active'));this.classList.add('active');buildProjects(e==="Todos"?null:e);};
+    el.appendChild(btn);
+  });
+}
+
+function buildDirectores(){
+  const dirs={};
+  filteredProjects.forEach(p=>{if(!dirs[p.encargado])dirs[p.encargado]={name:p.encargado,cargo:p.cargo,proyectos:[],totalValor:0,totalCobrar:0};dirs[p.encargado].proyectos.push(p);dirs[p.encargado].totalValor+=p.valor||0;dirs[p.encargado].totalCobrar+=p.pxCobrar||0;});
+  document.getElementById('dir-grid').innerHTML=Object.values(dirs).map(d=>{
+    const ejec=d.proyectos.filter(p=>p.estado==="En Ejecución").length;
+    const liq=d.proyectos.filter(p=>p.estado==="En Liquidación").length;
+    const avProm=d.proyectos.length?Math.round(d.proyectos.reduce((a,p)=>a+(p.avObra||0),0)/d.proyectos.length):0;
+    const initials=d.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const avC=hCol(avProm);
+    const ccvArr=d.proyectos.filter(p=>p.difCNpct!=null&&p.difCNpct!==0);
+    const scvArr=d.proyectos.filter(p=>p.difSNpct!=null&&p.difSNpct!==0);
+    const avgCCV=ccvArr.length?ccvArr.reduce((s,p)=>s+(p.difCNpct||0),0)/ccvArr.length:null;
+    const avgSCV=scvArr.length?scvArr.reduce((s,p)=>s+(p.difSNpct||0),0)/scvArr.length:null;
+    const fmtDif=(v,n)=>v==null?`<span style="color:#aaa">—</span>`:`<span style="color:${v>=0?'#1a8a52':'#c0392b'}">${v>=0?'+':''}${v.toFixed(1)}%</span><span style="font-size:9px;color:#aaa;margin-left:3px">(${n} proy.)</span>`;
+    return`<div class="dir-card" data-dir="${d.name}" onclick="openDrawer('${d.name}')">
+      <div class="dir-head"><div class="dir-av">${initials}</div><div><div class="dir-name">${d.name}</div><div class="dir-cargo">${d.cargo}</div></div></div>
+      <div class="dir-kpis">
+        <div class="dir-kpi"><div class="dir-kpi-n">${d.proyectos.length}</div><div class="dir-kpi-l">Proyectos</div></div>
+        <div class="dir-kpi"><div class="dir-kpi-n">${ejec}</div><div class="dir-kpi-l">En ejec.</div></div>
+        <div class="dir-kpi"><div class="dir-kpi-n">${liq}</div><div class="dir-kpi-l">En liq.</div></div>
+      </div>
+      <div class="dir-fin">
+        <div class="dir-fin-item"><div class="dir-fin-v">${fmtMM(d.totalValor)}</div><div class="dir-fin-l">Valor portafolio</div></div>
+        <div class="dir-fin-item"><div class="dir-fin-v" style="color:#c0392b">${fmtMM(d.totalCobrar)}</div><div class="dir-fin-l">Pend. cobrar</div></div>
+      </div>
+      <div class="dir-dif-row">
+        <div class="dir-dif-item"><div class="dir-dif-l">Dif. CCV% prom.</div><div class="dir-dif-v">${fmtDif(avgCCV,ccvArr.length)}</div></div>
+        <div class="dir-dif-item"><div class="dir-dif-l">Dif. SCV% prom.</div><div class="dir-dif-v">${fmtDif(avgSCV,scvArr.length)}</div></div>
+      </div>
+      <div class="dir-av-row"><div class="dir-av-lbl">Avance prom.</div><div class="dir-av-bg"><div class="dir-av-fill" style="width:${avProm}%;background:${avC}"></div></div><div class="dir-pct" style="color:${avC}">${avProm}%</div></div>
+    </div>`;}).join('');
+}
+
+function buildAlertas(){
+  const withObs=PROJECTS.filter(p=>p.obs&&p.obs.length>5);
+  document.getElementById('obs-list').innerHTML=withObs.map(p=>`<div class="obs-row"><span class="obs-code">${p.codigo}</span><span class="obs-txt"><strong style="color:#1a1a1a">${p.proyecto}</strong> — ${p.obs}</span></div>`).join('');
+  const delayed=PROJECTS.filter(p=>p.dias>10).sort((a,b)=>b.dias-a.dias);
+  document.getElementById('delay-list').innerHTML=delayed.length?delayed.map(p=>`<div class="risk-row"><span class="rbadge ${p.dias>50?'alta':'media'}">${p.dias}d</span><div><div class="risk-proj">${p.proyecto}</div><div class="risk-desc">${p.encargado} — ${p.estado}</div></div></div>`).join(''):'<div style="font-size:11px;color:#6b6b66;padding:8px 0">Sin retrasos significativos.</div>';
+  const highSN=PROJECTS.filter(p=>p.difSNpct>30&&p.difSNpct<200).sort((a,b)=>b.difSNpct-a.difSNpct);
+  document.getElementById('margin-list').innerHTML=highSN.map(p=>`<div class="risk-row"><span class="rbadge alta">${fmtPct(p.difSNpct)}</span><div><div class="risk-proj">${p.proyecto}</div><div class="risk-desc">${p.encargado} — ${p.estado}</div></div></div>`).join('');
+}
+
+function buildFinanciero(){
+  const enc={};PROJECTS.forEach(p=>{if(!enc[p.encargado])enc[p.encargado]=0;enc[p.encargado]+=(p.valor||0);});
+  const encSorted=Object.entries(enc).sort((a,b)=>b[1]-a[1]);
+  if(encChart)encChart.destroy();
+  encChart=new Chart(document.getElementById('encChart'),{type:'bar',data:{labels:encSorted.map(e=>e[0].split(' ')[0]),datasets:[{data:encSorted.map(e=>Math.round(e[1]/1e6)),backgroundColor:'#e8622a',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:"#6b6b66",font:{size:10}},border:{display:false}},y:{grid:{color:"#f0efec"},ticks:{color:"#6b6b66",font:{size:10},callback:v=>"$"+v+"M"},border:{display:false}}}}});
+  const active=PROJECTS.filter(p=>p.difSNpct>0&&p.difSNpct<200&&p.estado!=="Cerrado").sort((a,b)=>b.difSNpct-a.difSNpct).slice(0,12);
+  if(snChart)snChart.destroy();
+  snChart=new Chart(document.getElementById('snChart'),{type:'bar',data:{labels:active.map(p=>p.codigo),datasets:[{data:active.map(p=>p.difSNpct.toFixed(1)),backgroundColor:active.map(p=>p.difSNpct>35?"#c0392b":p.difSNpct>25?"#f5a623":"#e8622a"),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:"#f0efec"},ticks:{color:"#6b6b66",font:{size:10},callback:v=>v+"%"},border:{display:false}},y:{grid:{display:false},ticks:{color:"#6b6b66",font:{size:9}},border:{display:false}}}}});
+  document.getElementById('fin-tbody').innerHTML=PROJECTS.filter(p=>p.valor>0).map(p=>`<tr><td class="td-code">${p.codigo}</td><td class="td-primary" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.proyecto}</td><td class="td-money" style="text-align:right">${fmtMM(p.valor)}</td><td class="td-money" style="text-align:right">${fmtMM(p.liqSN)}</td><td class="td-money" style="text-align:right">${fmtMM(p.vContable)}</td><td class="td-money" style="text-align:right">${fmtMM(p.vPagado)}</td><td class="td-money" style="text-align:right;color:${p.pxCobrar>500000000?"#c0392b":"inherit"}">${fmtMM(p.pxCobrar)}</td><td class="${p.difSNpct>35?'td-neg':p.difSNpct>25?'td-warn':'td-ok'}" style="text-align:right">${fmtPct(p.difSNpct)}</td><td class="${p.difCNpct>100?'td-neg':p.difCNpct>50?'td-warn':''}" style="text-align:right">${fmtPct(p.difCNpct<200?p.difCNpct:NaN)}</td></tr>`).join('');
+}
+
+/* ── FICHA PROYECTO ── */
+function openFicha(codigo){
+  const p=PROJECTS.find(x=>x.codigo===codigo);if(!p)return;
+  const cls=EB[p.estado]||"eb-cerr";
+  const salud=Math.round(((p.avObra||0)*0.4)+((p.avLiq||0)*0.3)+60*0.3);
+  document.getElementById('ficha-header').innerHTML=`
+    <div>
+      <div class="ficha-codigo">${p.codigo}</div>
+      <div class="ficha-nombre">${p.proyecto}</div>
+      <div class="ficha-meta">
+        <div class="ficha-meta-item">Cliente: <span>${p.cliente}</span></div>
+        <div class="ficha-meta-item">Director: <span>${p.encargado}</span></div>
+        <div class="ficha-meta-item">Ciudad: <span>${p.ciudad||"—"}</span></div>
+        <div class="ficha-meta-item">Sector: <span>${p.sector||"—"}</span></div>
+        <div class="ficha-meta-item">Estado: <span><span class="estado-badge ${cls}" style="font-size:10px">${p.estado}</span></span></div>
+      </div>
+    </div>
+    <div class="ficha-salud">
+      <div class="ficha-salud-n" style="color:${hCol(salud)}">${salud}</div>
+      <div class="ficha-salud-l">Índice de salud /100</div>
+    </div>`;
+  const kpiData=[
+    {v:fmtMM(p.valor),l:"Valor del contrato",pct:100,c:"#1a1a1a"},
+    {v:fmtMM(p.vPagado),l:"Facturado",pct:p.valor?Math.round((p.vPagado||0)/p.valor*100):0,c:"#1a8a52"},
+    {v:fmtMM(p.pxCobrar),l:"Pendiente cobrar",pct:p.valor?Math.round((p.pxCobrar||0)/p.valor*100):0,c:"#c0392b"},
+    {v:p.avObra+"%",l:"Avance de obra",pct:p.avObra,c:hCol(p.avObra)},
+    {v:fmtPct(p.difSNpct),l:"Diferencia SN",pct:Math.min(p.difSNpct,100),c:p.difSNpct>35?"#c0392b":p.difSNpct>25?"#c08a00":"#1a8a52"},
+  ];
+  document.getElementById('ficha-kpis').innerHTML=kpiData.map(k=>`
+    <div class="ficha-kpi">
+      <div class="ficha-kpi-v">${k.v}</div>
+      <div class="ficha-kpi-l">${k.l}</div>
+      <div class="ficha-kpi-bar"><div class="ficha-kpi-bar-fill" style="width:${k.pct}%;background:${k.c}"></div></div>
+    </div>`).join('');
+  const healthItems=[{lbl:"Cronograma",pct:p.avObra>=80?85:p.avObra>=50?70:50},{lbl:"Financiero",pct:p.difSNpct<25?85:p.difSNpct<35?65:45},{lbl:"Cartera",pct:p.pxCobrar===0?95:p.pxCobrar<p.valor*0.3?70:45},{lbl:"Calidad",pct:p.obs&&p.obs.length>5?60:85},{lbl:"HSE",pct:88}];
+  document.getElementById('ficha-health').innerHTML=healthItems.map(h=>`<div class="health-row"><div class="health-lbl">${h.lbl}</div><div class="hbar-bg"><div class="hbar-fill" style="width:${h.pct}%;background:${hCol(h.pct)}"></div></div><div class="health-pct" style="color:${hCol(h.pct)}">${h.pct}%</div><div class="hdot" style="background:${hCol(h.pct)}"></div></div>`).join('');
+  buildCurvaS(p);
+  buildCronograma(p);
+  buildPresupuesto(p);
+  showPage('ficha',null);
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'proyectos'"))n.classList.add('active');});
+}
+
+function buildCurvaS(p){
+  if(curvaSChart)curvaSChart.destroy();
+  const det=PROJ_DETAIL[p.codigo];
+  let labels,planData,realData;
+  if(det&&det.curvaS&&det.curvaS.length){
+    /* ── datos reales del proyecto (Sheet / PDF) ── */
+    labels=det.curvaS.map(d=>d.s);
+    planData=det.curvaS.map(d=>d.prog);
+    realData=det.curvaS.map(d=>d.real);
+  } else {
+    /* ── aproximación genérica cuando no hay datos ── */
+    const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const avReal=p.avObra||0;
+    const mActual=new Date().getMonth();
+    labels=meses;
+    planData=meses.map((_,i)=>Math.min(100,Math.round((i/(meses.length-1))*100)));
+    realData=meses.map((_,i)=>{if(i>mActual)return null;const r=Math.round((i/Math.max(mActual,1))*avReal);return Math.min(r,avReal);});
+    realData[mActual]=avReal;
+  }
+  curvaSChart=new Chart(document.getElementById('curvaSChart'),{type:'line',data:{labels,datasets:[
+    {label:'Planeado',data:planData,borderColor:'#1a5fa5',borderDash:[5,4],borderWidth:2,pointRadius:3,pointBackgroundColor:'#1a5fa5',tension:0.4,fill:false},
+    {label:'Real',data:realData,borderColor:'#e8622a',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#e8622a',tension:0.4,fill:false},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:16,padding:12}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?ctx.raw+'%':'—'}`}}},scales:{x:{grid:{display:false},ticks:{color:"#6b6b66",font:{size:10}},border:{display:false}},y:{min:0,max:100,grid:{color:"#f0efec"},ticks:{color:"#6b6b66",font:{size:10},callback:v=>v+"%"},border:{display:false}}}}});
+}
+
+function buildCronograma(p){
+  const pctBase=p.avObra||0;
+  const caps=CAPS.map((c,i)=>{const variacion=(i%3===0?-8:i%3===1?5:-2);return{...c,pct:Math.max(0,Math.min(100,pctBase+variacion+(i*3%15-7)))};});
+  document.getElementById('cronograma-list').innerHTML=`<table class="cronograma-table"><thead><tr>
+    <th>Cap.</th><th>Descripción</th><th style="min-width:120px">Avance</th><th style="text-align:right">Selección</th></tr></thead><tbody>
+    ${caps.map(c=>`<tr>
+      <td class="cap-num">${c.n}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:4px;background:${c.color}22;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">${c.ico}</div><span style="font-size:11px;font-weight:600;color:${c.color}">${c.nom}</span></div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="cap-bar-wrap" style="flex:1"><div class="cap-bar-fill" style="width:${c.pct}%;background:${c.color}"></div></div>
+          <span class="cap-pct">${Math.round(c.pct)}%</span>
+        </div>
+      </td>
+      <td style="text-align:right"><div style="display:inline-block;background:${c.color}22;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600;color:${c.color}">Alcance</div></td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function buildPresupuesto(p){
+  const totalMonto=CAPS.reduce((a,c)=>a+c.monto,0);
+  const factor=p.valor>0?p.valor/1e6/totalMonto:1;
+  document.getElementById('presupuesto-caps').innerHTML=CAPS.map(c=>{
+    const monto=Math.round(c.monto*factor);
+    const pct=Math.round(c.monto/totalMonto*100);
+    return`<div class="cap-row">
+      <div class="cap-icon" style="background:${c.color}22;color:${c.color}">${c.ico}</div>
+      <div class="cap-info">
+        <div class="cap-info-top">
+          <span class="cap-info-label" style="color:${c.color}">${c.n} — ${c.nom}</span>
+          <span class="cap-info-monto">$${monto.toLocaleString()} M</span>
+        </div>
+        <div class="cap-info-sub">${pct}% del presupuesto total · $${c.monto.toLocaleString()}/m²</div>
+        <div class="cap-bar-mini"><div class="cap-bar-mini-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      </div>
+    </div>`;}).join('');
+}
+
+function updateTopbarSub(){
+  const an=document.getElementById('fil-anio');
+  const mn=document.getElementById('fil-mes');
+  const sub=document.getElementById('page-sub');
+  const parts=[];
+  if(an&&an.value!=='todos')parts.push(an.options[an.selectedIndex].text);
+  if(mn&&mn.value!=='todos')parts.push(mn.options[mn.selectedIndex].text);
+  if(parts.length){
+    const base=sub.textContent.split(' · ')[0];
+    sub.textContent=base+' · '+parts.join(' ');
+  }
+}
+
+let compMesChart,compDirCountChart;
+function buildComparativo(){
+  const p25=filteredProjects.filter(p=>p.anio===2025);
+  const p26=filteredProjects.filter(p=>p.anio===2026);
+
+  function yrCard(pp){
+    const val=pp.reduce((s,p)=>s+p.valor,0);
+    const abonos=pp.reduce((s,p)=>s+p.vPagado,0);
+    const fin=pp.filter(p=>p.estado==='Finalizado'||p.estado==='Cerrado').length;
+    const ejec=pp.filter(p=>p.estado==='En Ejecución').length;
+    const liq=pp.filter(p=>p.estado==='En Liquidación').length;
+    const mgnArr=pp.filter(p=>p.difSNpct>0);
+    const mgn=mgnArr.length?mgnArr.reduce((s,p)=>s+p.difSNpct,0)/mgnArr.length:0;
+    return [
+      {n:pp.length,     l:'Proyectos'},
+      {n:fmtMM(val),    l:'Valor CCV'},
+      {n:fmtMM(abonos), l:'Abonos'},
+      {n:fin,           l:'Finalizados'},
+      {n:ejec,          l:'En Ejecución'},
+      {n:mgn.toFixed(1)+'%', l:'Margen SCV'}
+    ].map(k=>`<div class="cmp-kpi"><div class="cmp-kpi-n">${k.n}</div><div class="cmp-kpi-l">${k.l}</div></div>`).join('');
+  }
+  document.getElementById('cmp-kpi-25').innerHTML=yrCard(p25);
+  document.getElementById('cmp-kpi-26').innerHTML=yrCard(p26);
+
+  /* chart helpers */
+  const chOpts=(fmt)=>({
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:11}}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.04)'}},
+            x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}
+  });
+
+  /* Mes chart */
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mv25=meses.map((_,i)=>Math.round(p25.filter(p=>(p.estado==='Finalizado'||p.estado==='Cerrado')&&p.mes===i+1).reduce((s,p)=>s+p.valor,0)/1e6));
+  const mv26=meses.map((_,i)=>Math.round(p26.filter(p=>(p.estado==='Finalizado'||p.estado==='Cerrado')&&p.mes===i+1).reduce((s,p)=>s+p.valor,0)/1e6));
+  if(compMesChart)compMesChart.destroy();
+  compMesChart=new Chart(document.getElementById('compMesChart'),{type:'bar',
+    data:{labels:meses,datasets:[
+      {label:'2025',data:mv25,backgroundColor:'#f5a623',borderRadius:4,barPercentage:.65},
+      {label:'2026',data:mv26,backgroundColor:'#e8622a',borderRadius:4,barPercentage:.65}
+    ]},options:chOpts(v=>'$'+v+' M')});
+
+  /* Director count chart */
+  const dirs=[...new Set(filteredProjects.map(p=>p.encargado))].sort();
+  const c25=dirs.map(d=>p25.filter(p=>p.encargado===d).length);
+  const c26=dirs.map(d=>p26.filter(p=>p.encargado===d).length);
+  if(compDirCountChart)compDirCountChart.destroy();
+  compDirCountChart=new Chart(document.getElementById('compDirCountChart'),{type:'bar',
+    data:{labels:dirs,datasets:[
+      {label:'2025',data:c25,backgroundColor:'#f5a623',borderRadius:4,barPercentage:.7},
+      {label:'2026',data:c26,backgroundColor:'#e8622a',borderRadius:4,barPercentage:.7}
+    ]},options:chOpts(v=>v+' proy.')});
+
+  /* Sector table */
+  const sects=[...new Set(filteredProjects.map(p=>p.sector).filter(Boolean))].sort();
+  const rows=sects.map(s=>{
+    const s25=p25.filter(p=>p.sector===s);
+    const s26=p26.filter(p=>p.sector===s);
+    return `<tr><td>${s}</td><td>${s25.length} proy. &nbsp;${fmtMM(s25.reduce((a,p)=>a+p.valor,0))}</td><td>${s26.length} proy. &nbsp;${fmtMM(s26.reduce((a,p)=>a+p.valor,0))}</td></tr>`;
+  }).join('');
+  document.getElementById('comp-sector-table').innerHTML=`
+    <table class="comp-table">
+      <thead><tr><th>Sector</th><th>2025</th><th>2026</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function openDrawer(dirName){
+  document.querySelectorAll('.dir-card').forEach(c=>c.classList.remove('selected'));
+  const card=[...document.querySelectorAll('.dir-card')].find(c=>c.dataset.dir===dirName);
+  if(card)card.classList.add('selected');
+  const projs=filteredProjects.filter(p=>p.encargado===dirName);
+  const EC_local={"Finalizado":"#5a8a5a","En Ejecución":"#1a8a52","En Liquidación":"#c08a00","Garantias":"#1a5fa5","Por Iniciar":"#4a3aa7","Cerrado":"#6b6b66"};
+  const rows=projs.map(p=>{
+    const ccvC=p.difCNpct>0?'#1a8a52':p.difCNpct<0?'#c0392b':'#aaa';
+    const scvC=p.difSNpct>0?'#1a8a52':p.difSNpct<0?'#c0392b':'#aaa';
+    const est=`<span style="background:${EC_local[p.estado]||'#888'};color:#fff;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:600">${p.estado}</span>`;
+    const dCCV=p.difCNpct!=null&&p.difCNpct!==0?`<span style="color:${ccvC}">${p.difCNpct>0?'+':''}${p.difCNpct.toFixed(1)}%</span>`:'<span style="color:#aaa">—</span>';
+    const dSCV=p.difSNpct!=null&&p.difSNpct!==0?`<span style="color:${scvC}">${p.difSNpct>0?'+':''}${p.difSNpct.toFixed(1)}%</span>`:'<span style="color:#aaa">—</span>';
+    const fac=p.pxFacturar>0?`<span style="color:#c08a00">${fmtMM(p.pxFacturar)}</span>`:'<span style="color:#aaa">—</span>';
+    const cob=p.pxCobrar>0?`<span style="color:#c0392b">${fmtMM(p.pxCobrar)}</span>`:'<span style="color:#aaa">—</span>';
+    return `<tr>
+      <td style="font-weight:600;color:#666">${p.codigo}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis" title="${p.proyecto}">${p.proyecto}</td>
+      <td>${est}</td>
+      <td style="text-align:right">${fmtMM(p.valor)}</td>
+      <td style="text-align:right">${dCCV}</td>
+      <td style="text-align:right">${dSCV}</td>
+      <td style="text-align:right">${fac}</td>
+      <td style="text-align:right">${cob}</td>
+      <td style="text-align:right">${p.avObra!=null?p.avObra+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+  /* totals */
+  const totVal=projs.reduce((s,p)=>s+(p.valor||0),0);
+  const totFac=projs.reduce((s,p)=>s+(p.pxFacturar||0),0);
+  const totCob=projs.reduce((s,p)=>s+(p.pxCobrar||0),0);
+  document.getElementById('dir-drawer-ttl').textContent=dirName;
+  document.getElementById('dir-drawer-body').innerHTML=rows;
+  const ccvArr2=projs.filter(p=>p.difCNpct!=null&&p.difCNpct!==0);
+  const scvArr2=projs.filter(p=>p.difSNpct!=null&&p.difSNpct!==0);
+  const avgCCV2=ccvArr2.length?ccvArr2.reduce((s,p)=>s+p.difCNpct,0)/ccvArr2.length:null;
+  const avgSCV2=scvArr2.length?scvArr2.reduce((s,p)=>s+p.difSNpct,0)/scvArr2.length:null;
+  const fmtAvg=(v,el)=>{if(v==null){el.textContent='—';el.style.color='#aaa';return;}
+    el.textContent=(v>0?'+':'')+v.toFixed(1)+'%';el.style.color=v>=0?'#1a8a52':'#c0392b';};
+  document.getElementById('tot-n').textContent=projs.length+' proyectos';
+  document.getElementById('tot-val').textContent=fmtMM(totVal);
+  document.getElementById('tot-fac').textContent=totFac>0?fmtMM(totFac):'—';
+  document.getElementById('tot-cob').textContent=totCob>0?fmtMM(totCob):'—';
+  fmtAvg(avgCCV2,document.getElementById('tot-ccv'));
+  fmtAvg(avgSCV2,document.getElementById('tot-scv'));
+  document.getElementById('dir-drawer').classList.add('open');
+}
+function closeDrawer(){
+  document.getElementById('dir-drawer').classList.remove('open');
+  document.querySelectorAll('.dir-card').forEach(c=>c.classList.remove('selected'));
+}
+
+
+function showProjDetail(codigo){
+  const p=filteredProjects.find(x=>x.codigo===codigo);
+  if(!p)return;
+  const det=PROJ_DETAIL[codigo]||null;
+  /* highlight row */
+  document.querySelectorAll('tr.sel-row').forEach(r=>r.classList.remove('sel-row'));
+  const row=document.querySelector(`tr[data-cod="${codigo}"]`);
+  if(row)row.classList.add('sel-row');
+  /* header */
+  document.getElementById('pdet-titulo').textContent=p.proyecto;
+  document.getElementById('pdet-info').textContent=
+    p.codigo+' · '+p.encargado+' · '+p.estado+' · Avance: '+(p.avObra||'—')+'%';
+  /* ── Curva S ── */
+  const curvaWrap=document.getElementById('curva-wrap');
+  if(det&&det.curvaS&&det.curvaS.length){
+    curvaWrap.innerHTML='<canvas id="curvaSDetailChart"></canvas>';
+    if(curvaSDetailChart)curvaSDetailChart.destroy();
+    curvaSDetailChart=new Chart(document.getElementById('curvaSDetailChart'),{
+      type:'line',
+      data:{
+        labels:det.curvaS.map(d=>d.s),
+        datasets:[
+          {label:'Programado',data:det.curvaS.map(d=>d.prog),borderColor:'#1a5fa5',backgroundColor:'rgba(26,95,165,.08)',fill:true,tension:.4,pointRadius:2,borderWidth:2},
+          {label:'Real',data:det.curvaS.map(d=>d.real),borderColor:'#e8622a',backgroundColor:'rgba(232,98,42,.06)',fill:true,tension:.4,pointRadius:2,borderWidth:2,borderDash:[]}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10}}},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+        scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+                x:{ticks:{font:{size:8},maxRotation:45},grid:{display:false}}}
+      }
+    });
+  } else {
+    curvaWrap.innerHTML='<div class="pdet-nodata">Sin datos de curva S para este proyecto</div>';
+    if(curvaSDetailChart){curvaSDetailChart.destroy();curvaSDetailChart=null;}
+  }
+  /* ── Capítulos ── */
+  const capWrap=document.getElementById('cap-wrap');
+  if(!capWrap)return;
+  const caps=det&&det.capitulos;
+  if(caps&&caps.length){
+    capWrap.innerHTML='<canvas id="capDetailChart"></canvas>';
+    if(capDetailChart)capDetailChart.destroy();
+    capDetailChart=new Chart(document.getElementById('capDetailChart'),{
+      type:'bar',
+      data:{
+        labels:caps.map(c=>c.cap),
+        datasets:[
+          {label:'Programado',data:caps.map(c=>c.prog),backgroundColor:'rgba(26,95,165,.25)',borderColor:'#1a5fa5',borderWidth:1,borderRadius:3},
+          {label:'Real',data:caps.map(c=>c.real),backgroundColor:'rgba(232,98,42,.7)',borderColor:'#e8622a',borderWidth:1,borderRadius:3}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10}}}},
+        scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,.04)'}},
+                y:{ticks:{font:{size:8}},grid:{display:false}}}
+      }
+    });
+  } else {
+    capWrap.innerHTML='<div class="pdet-nodata">Sin datos de capítulos para este proyecto.</div>';
+    if(capDetailChart){capDetailChart.destroy();capDetailChart=null;}
+  }
+}
+
+function closeProjDetail(){
+  const pd=document.getElementById('proj-detail');
+  if(pd)pd.style.display='none';
+  if(curvaSDetailChart){curvaSDetailChart.destroy();curvaSDetailChart=null;}
+  if(capDetailChart){capDetailChart.destroy();capDetailChart=null;}
+}
+
+
+/* ═══ FLUJO DE CAJA — hitos de cobro por proyecto ═══
+   Se referencia el proyecto por "codigo" contra el array PROJECTS (no se duplica
+   nombre/cliente/encargado/valor). semana y fecha van en formato "YYYY-MM-DD" (fecha real
+   una vez la conozcas). Mientras no tengas la fecha real, puedes usar un número entero =
+   días desde hoy (ej: 14) y se recalcula solo cada vez que se abre el archivo.
+   Estado de cada hito: "Pendiente" | "Presentado" | "Cobrado". ── */
+const FLUJO_CAJA=[
+  {codigo:"C-25-027",hitos:[{tipo:"Anticipo",valor:319204011,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:106401337,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-032",hitos:[{tipo:"Retegarantía",valor:4141200,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:37270800,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-033",hitos:[{tipo:"Anticipo",valor:494628040,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:164876013,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:989256080,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-035",hitos:[{tipo:"Anticipo",valor:246756794,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:82252265,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:493513589,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-038",hitos:[{tipo:"Anticipo",valor:1575853374,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:525284458,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:3151706747,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-039",hitos:[]},
+  {codigo:"C-25-040",hitos:[{tipo:"Anticipo",valor:722278958,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:240759652,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1444557915,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-041",hitos:[]},
+  {codigo:"C-25-046",hitos:[{tipo:"Anticipo",valor:635126736,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:211708912,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1270253473,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-25-048",hitos:[{tipo:"Anticipo",valor:211049785,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:70349928,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:422099569,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-004",hitos:[{tipo:"Anticipo",valor:266784777,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:100044292,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:100044292,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 3",valor:90039862,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:66696194,semana:"2026-08-10",semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-005",hitos:[{tipo:"Anticipo",valor:17814258,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:5938086,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:35628516,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-006",hitos:[{tipo:"Anticipo",valor:533045730,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:177681910,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1066091460,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-007",hitos:[{tipo:"Anticipo",valor:243964658,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:113850174,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:113850174,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 3",valor:128081445,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:81321552,semana:"2026-08-10",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:60991164,semana:"2026-07-27",semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-008",hitos:[{tipo:"Anticipo",valor:14618018,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:4872672,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:29236035,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-009",hitos:[{tipo:"Anticipo",valor:1441231347,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:480410449,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:2882462695,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-010",hitos:[{tipo:"Anticipo",valor:6831695,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:2277232,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:13663390,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-011",hitos:[{tipo:"Anticipo",valor:81026522,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:27008841,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:162053044,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-013",hitos:[{tipo:"Anticipo",valor:27201084,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:9067028,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:54402169,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-014",hitos:[{tipo:"Anticipo",valor:32366139,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:10788713,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:64732277,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-016",hitos:[{tipo:"Anticipo",valor:115066497,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:38355499,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:230132993,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-017",hitos:[{tipo:"Anticipo",valor:9159465,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 1",valor:10686043,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:4274417,semana:"2026-06-08",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 3",valor:2137209,semana:"2026-06-15",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:3053155,semana:"2026-07-06",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1221262,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-019",hitos:[{tipo:"Anticipo",valor:21384400,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:7128133,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:42768800,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-020",hitos:[{tipo:"Anticipo",valor:145600688,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:29120138,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:116480550,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-021",hitos:[{tipo:"Anticipo",valor:65636084,semana:"2026-06-15",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:10939347,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:142211514,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-022",hitos:[{tipo:"Anticipo",valor:8178918,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:1635784,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:6543134,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-023",hitos:[{tipo:"Anticipo",valor:64048018,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:28821608,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:28821608,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:16012004,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:22416806,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-024",hitos:[{tipo:"Anticipo",valor:218983624,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:204384715,semana:"2026-08-10",semanaPresenta:"2026-07-06",fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:229932805,semana:"2026-08-31",semanaPresenta:"2026-07-27",fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:72994541,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:3649727,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-025",hitos:[{tipo:"Anticipo",valor:58725352,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:19575117,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:117450704,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-026",hitos:[{tipo:"Anticipo",valor:344469522,semana:"2026-06-22",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 1",valor:281316776,semana:"2026-08-10",semanaPresenta:"2026-07-06",fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:401881109,semana:"2026-08-24",semanaPresenta:"2026-07-20",fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:114823174,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:5741159,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
+  {codigo:"C-26-027",hitos:[{tipo:"Anticipo",valor:3864986,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:966246,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:4831232,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]}
+];
+/* fila de ejemplo (C-25-027) para mostrar el formato — reemplázala cuando tengas
+   los datos reales de anticipos/cortes/liquidación de tu Google Sheet */
+
+const TIPO_COLOR_FC={Anticipo:'#2e7dd1',Corte:'#1a8a52','Liquidación':'#e8622a','Retegarantía':'#a82c00',Vencido:'#c0392b'};
+function mondayOf(d){const dt=new Date(d);const day=(dt.getDay()+6)%7;dt.setHours(0,0,0,0);dt.setDate(dt.getDate()-day);return dt;}
+function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt;}
+function fcShort(d){return d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit'});}
+function fcResolveDate(val,base){if(val==null)return null;if(typeof val==='number')return addDays(base,val);const d=new Date(val+'T00:00:00');return isNaN(d)?null:d;}
+const SEMANA1_INICIO=new Date(2025,11,29);
+function semanaNumOf(d){const diff=Math.round((mondayOf(d)-SEMANA1_INICIO)/(86400000*7));return diff+1;}
+
+let fcSemanaChart,fcTipoChart;
+let fcActiveWeek=0,fcR4Weeks=[],fcR4Rows=[];
+function fcSelectWeek(i){fcActiveWeek=i;renderResumen4Semanas();}
+function buildResumen4Semanas(weeks,rows){
+  fcR4Weeks=weeks.slice(0,4);
+  fcR4Rows=rows;
+  if(fcActiveWeek>fcR4Weeks.length-1)fcActiveWeek=0;
+  renderResumen4Semanas();
+}
+function esVencido(h,cutoff){
+  const ingOverdue=h.semanaDate&&h.semanaDate<cutoff&&h.estado!=='Cobrado';
+  const presOverdue=h.semanaPresentaDate&&h.semanaPresentaDate<cutoff&&h.estado!=='Presentado'&&h.estado!=='Cobrado';
+  return ingOverdue||presOverdue;
+}
+function renderResumen4Semanas(){
+  const weeks=fcR4Weeks,rows=fcR4Rows;
+  if(!weeks.length)return;
+  const cutoff=weeks[0].start;
+  const vencidosList=rows.filter(h=>esVencido(h,cutoff));
+  const vencidoTotal=vencidosList.reduce((s,h)=>s+h.valor,0);
+  const cards=weeks.map((w,i)=>{
+    const ingresar=rows.filter(h=>h.semanaDate&&h.semanaDate>=w.start&&h.semanaDate<=w.end).reduce((s,h)=>s+h.valor,0);
+    const presentar=rows.filter(h=>h.semanaPresentaDate&&h.semanaPresentaDate>=w.start&&h.semanaPresentaDate<=w.end).reduce((s,h)=>s+h.valor,0);
+    const totalSemana=ingresar+presentar;
+    const esSemanaActual=i===0;
+    const vencidoRow=esSemanaActual&&vencidoTotal>0?`<div class="fc-r4-row vencido"><span>⚠ Vencido</span><span class="fc-r4-val venc">${fmtMM(vencidoTotal)}</span></div>`:'';
+    const cardCls='fc-r4-card'+(i===fcActiveWeek?' active':'');
+    return`<div class="${cardCls}" onclick="fcSelectWeek(${i})">
+      <div class="fc-r4-wk">Semana ${semanaNumOf(w.start)}${esSemanaActual?' (actual)':''}</div>
+      <div class="fc-r4-date">${fcShort(w.start)}–${fcShort(w.end)}</div>
+      <div class="fc-r4-row"><span>A ingresar</span><span class="fc-r4-val ing">${fmtMM(ingresar)}</span></div>
+      <div class="fc-r4-row"><span>A presentar</span><span class="fc-r4-val pres">${fmtMM(presentar)}</span></div>
+      <div class="fc-r4-row total"><span>Total semana</span><span class="fc-r4-val total">${fmtMM(totalSemana)}</span></div>
+      ${vencidoRow}
+    </div>`;
+  }).join('');
+  document.getElementById('fc-resumen4').innerHTML=cards;
+
+  const w=weeks[fcActiveWeek];
+  const ingRows=rows.filter(h=>h.semanaDate&&h.semanaDate>=w.start&&h.semanaDate<=w.end);
+  const presRows=rows.filter(h=>h.semanaPresentaDate&&h.semanaPresentaDate>=w.start&&h.semanaPresentaDate<=w.end);
+  const rowHtml=list=>list.length?list.map(h=>`<div class="fc-r4-row" style="border-bottom:1px solid #f5f3f0;padding:5px 0">
+      <span><strong style="color:#1a1a1a">${h.proyecto}</strong> — ${h.label||h.tipo} <span class="ht ht-${h.tipo}" style="margin-left:4px">${h.tipo}</span></span>
+      <span class="fc-r4-val" style="font-size:11px">${fmtMM(h.valor)}</span></div>`).join(''):
+    '<div class="fc-r4-detail-empty">Nada programado esta semana.</div>';
+  const vencidoHtml=fcActiveWeek===0&&vencidosList.length?`
+      <div class="fc-r4-detail-title venc" style="margin-top:12px">⚠ Vencido (acumulado) — ${vencidosList.length} hito(s)</div>
+      ${vencidosList.map(h=>`<div class="fc-r4-row" style="border-bottom:1px solid #f5f3f0;padding:5px 0">
+        <span><strong style="color:#1a1a1a">${h.proyecto}</strong> — ${h.label||h.tipo} <span class="ht ht-${h.tipo}" style="margin-left:4px">${h.tipo}</span></span>
+        <span class="fc-r4-val venc" style="font-size:11px">${fmtMM(h.valor)}</span></div>`).join('')}`:'';
+  document.getElementById('fc-resumen4-detail').innerHTML=`
+    <div class="fc-r4-detail-wrap">
+      <div class="fc-r4-detail-title">A ingresar — Semana ${semanaNumOf(w.start)} (${fcShort(w.start)}–${fcShort(w.end)})</div>
+      ${rowHtml(ingRows)}
+      <div class="fc-r4-detail-title" style="margin-top:12px">A presentar — Semana ${semanaNumOf(w.start)} (${fcShort(w.start)}–${fcShort(w.end)})</div>
+      ${rowHtml(presRows)}
+      ${vencidoHtml}
+    </div>`;
+}
+function buildFlujoCaja(){
+  const codigosVisibles=new Set(filteredProjects.map(p=>p.codigo));
+  const today0=mondayOf(new Date());
+  const weeks=[...Array(12)].map((_,i)=>({start:addDays(today0,i*7),end:addDays(today0,i*7+6)}));
+  const rows=[];
+  FLUJO_CAJA.forEach(fc=>{
+    const p=PROJECTS.find(x=>x.codigo===fc.codigo);
+    if(!p||!codigosVisibles.has(fc.codigo))return;
+    fc.hitos.forEach(h=>{
+      rows.push({...h,codigo:fc.codigo,proyecto:p.proyecto,encargado:p.encargado,
+        semanaDate:fcResolveDate(h.semana,today0),fechaDate:fcResolveDate(h.fecha,today0),
+        semanaPresentaDate:fcResolveDate(h.semanaPresenta,today0)});
+    });
+  });
+
+  buildResumen4Semanas(weeks,rows);
+
+  const totalProyectado=rows.filter(h=>h.semanaDate&&h.semanaDate>=weeks[0].start&&h.semanaDate<=weeks[11].end).reduce((s,h)=>s+h.valor,0);
+  const vencidos=rows.filter(h=>h.semanaDate&&h.semanaDate<weeks[0].start&&h.estado!=='Cobrado');
+  const totalVencido=vencidos.reduce((s,h)=>s+h.valor,0);
+  const totalPendiente=rows.filter(h=>h.estado==='Pendiente').reduce((s,h)=>s+h.valor,0);
+  const totalGestionado=rows.filter(h=>h.estado==='Presentado'||h.estado==='Cobrado').reduce((s,h)=>s+h.valor,0);
+
+  const sinHitos=FLUJO_CAJA.filter(fc=>codigosVisibles.has(fc.codigo)&&fc.hitos.length===0).length;
+  const note=document.getElementById('fc-note');
+  if(sinHitos>0){note.style.display='block';note.textContent=`⚠ ${sinHitos} proyecto(s) activos sin hitos programados todavía — complétalos en la pestaña "Flujo de Caja" del Google Sheet y regenera este archivo.`;}
+  else note.style.display='none';
+
+  document.getElementById('fc-kpi-strip').innerHTML=`
+    <div class="kpi"><div class="kpi-ico total"><svg width="16" height="16" fill="none" stroke="#e8622a" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="9" x2="23" y2="9"/></svg></div>
+      <div><div class="kpi-num">${fmtMM(totalProyectado)}</div><div class="kpi-lbl">Proyectado 12 semanas</div></div></div>
+    <div class="kpi"><div class="kpi-ico venc"><svg width="16" height="16" fill="none" stroke="#c0392b" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div>
+      <div><div class="kpi-num" style="color:#c0392b">${fmtMM(totalVencido)}</div><div class="kpi-lbl">Vencido sin presentar</div></div></div>
+    <div class="kpi"><div class="kpi-ico liq"><svg width="16" height="16" fill="none" stroke="#a0620a" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div><div class="kpi-num" style="color:#a0620a">${fmtMM(totalPendiente)}</div><div class="kpi-lbl">Pendiente por presentar</div></div></div>
+    <div class="kpi"><div class="kpi-ico ejec"><svg width="16" height="16" fill="none" stroke="#1a8a52" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div class="kpi-num" style="color:#1a8a52">${fmtMM(totalGestionado)}</div><div class="kpi-lbl">Presentado / cobrado</div></div></div>`;
+
+  const byWeek=weeks.map(w=>({Anticipo:0,Corte:0,'Liquidación':0,'Retegarantía':0,'Vencido':0}));
+  rows.forEach(h=>{if(!h.semanaDate)return;weeks.forEach((w,i)=>{if(h.semanaDate>=w.start&&h.semanaDate<=w.end)byWeek[i][h.tipo]+=h.valor;});});
+  byWeek[0]['Vencido']=rows.filter(h=>esVencido(h,weeks[0].start)).reduce((s,h)=>s+h.valor,0);
+  const labels=weeks.map(w=>[`${fcShort(w.start)}–${fcShort(w.end)}`,`Semana ${semanaNumOf(w.start)}`]);
+  if(fcSemanaChart)fcSemanaChart.destroy();
+  fcSemanaChart=new Chart(document.getElementById('fcSemanaChart'),{type:'bar',
+    data:{labels,datasets:['Anticipo','Corte','Liquidación','Retegarantía','Vencido'].map(t=>({label:t,backgroundColor:TIPO_COLOR_FC[t],data:byWeek.map(w=>w[t]),stack:'s',borderRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtMM(c.raw)}`}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:"#6b6b66",font:{size:9}},border:{display:false}},
+               y:{stacked:true,grid:{color:"#f0efec"},ticks:{color:"#6b6b66",font:{size:10},callback:v=>fmtMM(v)},border:{display:false}}}}});
+
+  const tipoTotals={Anticipo:0,Corte:0,'Liquidación':0,'Retegarantía':0};
+  rows.forEach(h=>tipoTotals[h.tipo]+=h.valor);
+  const tLabels=Object.keys(tipoTotals),tData=Object.values(tipoTotals),tColors=tLabels.map(l=>TIPO_COLOR_FC[l]);
+  if(fcTipoChart)fcTipoChart.destroy();
+  fcTipoChart=new Chart(document.getElementById('fcTipoChart'),{type:'doughnut',
+    data:{labels:tLabels,datasets:[{data:tData,backgroundColor:tColors,borderWidth:6,borderColor:'#fff',borderRadius:8,spacing:4}]},
+    options:{responsive:false,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmtMM(c.raw)}`}}}}});
+  document.getElementById('fc-donut-n').textContent=rows.length;
+  document.getElementById('fc-tipo-legend').innerHTML=tLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${tColors[i]}"></div><span>${l}</span><span class="legend-n">${fmtMM(tData[i])}</span></div>`).join('');
+
+  const pendRows=rows.filter(h=>h.estado!=='Cobrado').sort((a,b)=>{const av=a.semanaDate?a.semanaDate.getTime():Infinity;const bv=b.semanaDate?b.semanaDate.getTime():Infinity;return av-bv;});
+  document.getElementById('fc-hitos-tbody').innerHTML=pendRows.length?pendRows.map(h=>{
+    const isVenc=h.semanaDate&&h.semanaDate<today0&&h.estado!=='Cobrado';
+    const hbCls=h.estado==='Cobrado'?'hb-cob':h.estado==='Presentado'?'hb-pres':'hb-pend';
+    return`<tr${isVenc?' class="fc-row-venc"':''}>
+      <td>${h.semanaDate?fcShort(h.semanaDate)+(isVenc?' ⚠':''):'<em style="color:#bbb">Sin fecha</em>'}</td>
+      <td class="td-primary">${h.proyecto}</td><td>${h.encargado||''}</td>
+      <td><span class="ht ht-${h.tipo}">${h.label||h.tipo}</span></td>
+      <td class="td-money" style="text-align:right">${fmtMM(h.valor)}</td>
+      <td><span class="hb ${hbCls}">${h.estado}</span></td>
+      <td>${h.fechaDate?h.fechaDate.toLocaleDateString('es-CO'):'—'}</td></tr>`;}).join(''):
+    '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No hay hitos pendientes con los filtros actuales</td></tr>';
+
+  document.getElementById('fc-proy-tbody').innerHTML=FLUJO_CAJA.filter(fc=>codigosVisibles.has(fc.codigo)).map(fc=>{
+    const p=PROJECTS.find(x=>x.codigo===fc.codigo);if(!p)return'';
+    const programado=fc.hitos.filter(h=>h.tipo!=='Retegarantía').reduce((s,h)=>s+h.valor,0);
+    const sinProgramar=Math.max(0,(p.valor||0)-programado);
+    const cls=EB[p.estado]||"eb-cerr";
+    return`<tr><td class="td-code">${p.codigo}</td><td class="td-primary">${p.proyecto}</td><td>${p.encargado}</td>
+      <td><span class="estado-badge ${cls}">${p.estado}</span></td>
+      <td class="td-money" style="text-align:right">${fmtMM(p.valor)}</td>
+      <td class="td-money" style="text-align:right">${fmtMM(programado)}</td>
+      <td style="text-align:right;color:${sinProgramar>0?'#a0620a':'#aaa'}">${sinProgramar>0?fmtMM(sinProgramar):'—'}</td></tr>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  populateFilters();
+  buildKPIs();buildFinanceBar();buildDonut();buildRisks();buildHealth();buildActions();buildSector();
+  buildProjects();buildEstadoFilters();buildDirectores();buildAlertas();buildFinanciero();buildComparativo();
+  buildFlujoCaja();
+});
+</script>
+</body>
+</html>
