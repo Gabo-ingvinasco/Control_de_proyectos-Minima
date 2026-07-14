@@ -65,6 +65,9 @@ body{font-family:'Inter',sans-serif;background:#f6f1ee;color:#1a1a1a;display:fle
 .donut-big-n{font-size:30px;font-weight:700;color:#1a1a1a;line-height:1}
 .donut-sub{font-size:11px;color:#6b6b66;margin-top:3px;letter-spacing:.03em}
 .legend-list{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;width:100%;max-width:260px}
+.fc-donut-wrap{flex-direction:row;align-items:center;justify-content:center;gap:28px}
+.fc-tipo-legend-list{display:flex;flex-direction:column;grid-template-columns:none;gap:10px;width:auto;max-width:none}
+.fc-tipo-legend-list .legend-item{min-width:190px}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#6b6b66;min-width:0}
 .legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
 .legend-n{font-weight:600;color:#1a1a1a;margin-left:auto}
@@ -657,7 +660,7 @@ tr.fc-row-venc td{background:#fdf5f4}
       </div>
       <div class="panel" style="margin-bottom:12px">
         <div class="panel-head"><div class="panel-title">Distribución por tipo de hito</div></div>
-        <div class="donut-wrap">
+        <div class="donut-wrap fc-donut-wrap">
           <div class="donut-chart-wrap">
             <canvas id="fcTipoChart"></canvas>
             <div class="donut-center" id="fc-donut-center">
@@ -665,7 +668,7 @@ tr.fc-row-venc td{background:#fdf5f4}
               <div class="donut-sub">hitos</div>
             </div>
           </div>
-          <div class="legend-list" id="fc-tipo-legend"></div>
+          <div class="legend-list fc-tipo-legend-list" id="fc-tipo-legend"></div>
         </div>
       </div>
       <div class="panel" style="margin-bottom:12px">
