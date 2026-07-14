@@ -280,6 +280,11 @@ tr.sel-row td{background:#fff8f4 !important}
 .fc-r4-row.total span:first-child{color:#1a1a1a;font-weight:600;font-size:10px}
 .fc-r4-val.total{color:#1a1a1a}
 .fc-r4-detail-title.venc{color:#c0392b}
+.fc-venc-panel{border:1px solid #f0c8c4}
+.panel-title.venc{color:#c0392b}
+.fc-venc-sub{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#c0392b}
+.fc-venc-note{font-size:10px;color:#8a5a54;background:#fbf1ef;border-radius:6px;padding:7px 10px;margin-bottom:10px}
+tr.fc-row-venc td{background:#fdf5f4}
 
 </style>
 </head>
@@ -608,6 +613,23 @@ tr.sel-row td{background:#fff8f4 !important}
         <div class="panel-head"><div class="panel-title">Resumen próximas 4 semanas</div></div>
         <div class="fc-r4-grid" id="fc-resumen4"></div>
       </div>
+      <div class="panel fc-venc-panel" style="margin-bottom:12px">
+        <div class="panel-head">
+          <div class="panel-title venc">⚠ Pagos vencidos</div>
+          <div class="fc-venc-sub" id="fc-venc-sub"></div>
+        </div>
+        <div class="fc-venc-note">Hitos cuya fecha de ingreso o presentación ya pasó y cuyo estado sigue en <span class="hb hb-pend">Pendiente</span> (no se ha registrado ni confirmado el ingreso). Independiente de lo que corresponde ingresar/presentar esta semana.</div>
+        <div class="tbl-wrap" style="border:none">
+          <table>
+            <thead><tr>
+              <th>Proyecto</th><th>Encargado</th><th>Hito</th>
+              <th style="text-align:right">Valor</th><th>Debía ingresar</th>
+              <th>Debía presentar</th><th style="text-align:right">Días de atraso</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="fc-vencidos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
       <div class="grid12">
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Detalle de la semana seleccionada</div></div>
@@ -620,7 +642,6 @@ tr.sel-row td{background:#fff8f4 !important}
             <span><i class="fc-dot" style="background:#1a8a52"></i>Corte</span>
             <span><i class="fc-dot" style="background:#e8622a"></i>Liquidación</span>
             <span><i class="fc-dot" style="background:#a82c00"></i>Retegarantía</span>
-            <span><i class="fc-dot" style="background:#c0392b"></i>Vencido</span>
           </div>
           <div style="height:400px;position:relative"><canvas id="fcSemanaChart"></canvas></div>
         </div>
@@ -785,7 +806,7 @@ const PROJECTS=[
 ];
 const EC={"Finalizado":"#e8622a","En Ejecución":"#f7c400","En Liquidación":"#a82c00","Garantias":"#7a1010","Por Iniciar":"#ffaa44","Cerrado":"#9e8c80"};
 const EB={"Finalizado":"eb-fin","En Ejecución":"eb-ejec","En Liquidación":"eb-liq","Garantias":"eb-gar","Por Iniciar":"eb-ini","Cerrado":"eb-cerr"};
-const fmtMM=v=>{if(!v||isNaN(v)||v===0)return"—";const mm=v/1e6;if(mm>=1000)return"$"+(v/1e9).toFixed(2)+" MM";if(mm>=1)return"$"+Math.round(mm)+" M";return"$"+Math.round(v/1e3)+" K";};
+const fmtMM=v=>{if(v===null||v===undefined||isNaN(v)||v===0)return"—";return"$"+Math.round(v).toLocaleString('es-CO');};
 const fmtPct=v=>v?v.toFixed(1)+"%":"—";
 const hCol=v=>v>=85?"#1a8a52":v>=60?"#c08a00":"#c0392b";
 let filteredProjects=[...PROJECTS];
@@ -1344,47 +1365,98 @@ function closeProjDetail(){
 
 
 /* ═══ FLUJO DE CAJA — hitos de cobro por proyecto ═══
-   Se referencia el proyecto por "codigo" contra el array PROJECTS (no se duplica
-   nombre/cliente/encargado/valor). semana y fecha van en formato "YYYY-MM-DD" (fecha real
-   una vez la conozcas). Mientras no tengas la fecha real, puedes usar un número entero =
-   días desde hoy (ej: 14) y se recalcula solo cada vez que se abre el archivo.
-   Estado de cada hito: "Pendiente" | "Presentado" | "Cobrado". ── */
-const FLUJO_CAJA=[
-  {codigo:"C-25-027",hitos:[{tipo:"Anticipo",valor:319204011,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:106401337,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-032",hitos:[{tipo:"Retegarantía",valor:4141200,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:37270800,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-033",hitos:[{tipo:"Anticipo",valor:494628040,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:164876013,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:989256080,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-035",hitos:[{tipo:"Anticipo",valor:246756794,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:82252265,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:493513589,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-038",hitos:[{tipo:"Anticipo",valor:1575853374,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:525284458,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:3151706747,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-039",hitos:[]},
-  {codigo:"C-25-040",hitos:[{tipo:"Anticipo",valor:722278958,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:240759652,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1444557915,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-041",hitos:[]},
-  {codigo:"C-25-046",hitos:[{tipo:"Anticipo",valor:635126736,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:211708912,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1270253473,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-25-048",hitos:[{tipo:"Anticipo",valor:211049785,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:70349928,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:422099569,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-004",hitos:[{tipo:"Anticipo",valor:266784777,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:100044292,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:100044292,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 3",valor:90039862,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:66696194,semana:"2026-08-10",semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-005",hitos:[{tipo:"Anticipo",valor:17814258,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:5938086,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:35628516,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-006",hitos:[{tipo:"Anticipo",valor:533045730,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:177681910,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1066091460,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-007",hitos:[{tipo:"Anticipo",valor:243964658,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:113850174,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:113850174,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 3",valor:128081445,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:81321552,semana:"2026-08-10",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:60991164,semana:"2026-07-27",semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-008",hitos:[{tipo:"Anticipo",valor:14618018,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:4872672,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:29236035,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-009",hitos:[{tipo:"Anticipo",valor:1441231347,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:480410449,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:2882462695,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-010",hitos:[{tipo:"Anticipo",valor:6831695,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:2277232,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:13663390,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-011",hitos:[{tipo:"Anticipo",valor:81026522,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:27008841,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:162053044,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-013",hitos:[{tipo:"Anticipo",valor:27201084,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:9067028,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:54402169,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-014",hitos:[{tipo:"Anticipo",valor:32366139,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:10788713,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:64732277,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-016",hitos:[{tipo:"Anticipo",valor:115066497,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:38355499,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:230132993,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-017",hitos:[{tipo:"Anticipo",valor:9159465,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 1",valor:10686043,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:4274417,semana:"2026-06-08",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 3",valor:2137209,semana:"2026-06-15",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:3053155,semana:"2026-07-06",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:1221262,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-019",hitos:[{tipo:"Anticipo",valor:21384400,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:7128133,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:42768800,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-020",hitos:[{tipo:"Anticipo",valor:145600688,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:29120138,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:116480550,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-021",hitos:[{tipo:"Anticipo",valor:65636084,semana:"2026-06-15",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:10939347,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:142211514,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-022",hitos:[{tipo:"Anticipo",valor:8178918,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:1635784,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:6543134,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-023",hitos:[{tipo:"Anticipo",valor:64048018,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:28821608,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 2",valor:28821608,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Retegarantía",valor:16012004,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:22416806,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-024",hitos:[{tipo:"Anticipo",valor:218983624,semana:null,semanaPresenta:null,fecha:null,estado:"Cobrado"},{tipo:"Corte",label:"Corte 1",valor:204384715,semana:"2026-08-10",semanaPresenta:"2026-07-06",fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:229932805,semana:"2026-08-31",semanaPresenta:"2026-07-27",fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:72994541,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:3649727,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-025",hitos:[{tipo:"Anticipo",valor:58725352,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:19575117,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:117450704,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-026",hitos:[{tipo:"Anticipo",valor:344469522,semana:"2026-06-22",semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 1",valor:281316776,semana:"2026-08-10",semanaPresenta:"2026-07-06",fecha:null,estado:"Pendiente"},{tipo:"Corte",label:"Corte 2",valor:401881109,semana:"2026-08-24",semanaPresenta:"2026-07-20",fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:114823174,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:5741159,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]},
-  {codigo:"C-26-027",hitos:[{tipo:"Anticipo",valor:3864986,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Retegarantía",valor:966246,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"},{tipo:"Liquidación",valor:4831232,semana:null,semanaPresenta:null,fecha:null,estado:"Pendiente"}]}
-];
-/* fila de ejemplo (C-25-027) para mostrar el formato — reemplázala cuando tengas
-   los datos reales de anticipos/cortes/liquidación de tu Google Sheet */
+   Los datos se cargan EN VIVO desde la hoja "Flujo de Caja - Proyectos" del
+   Google Sheet "Control General de Proyectos" (publicado como "Cualquiera con
+   el enlace"). No hay datos embebidos: cada vez que se abre el dashboard se
+   consulta el Sheet directamente. Estado real de cada hito en la fuente:
+   "Pendiente" | "Confirmado". ── */
+let FLUJO_CAJA=[];
+const FLUJO_SHEET_ID='1CbTHrQqdji7HayP2XuVz_x-aJE4o4CGKq0zI1immtfM';
+const FLUJO_SHEET_GID='327388996';
+const FLUJO_CSV_URL=`https://docs.google.com/spreadsheets/d/${FLUJO_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${FLUJO_SHEET_GID}`;
 
+function parseSheetCSV(text){
+  const rows=[];let row=[];let field='';let inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; } else field+=c; }
+    else { if(c==='"') inQ=true; else if(c===','){row.push(field);field='';} else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';} else if(c==='\r'){} else field+=c; }
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function parseMoneyCO(s){
+  if(!s)return 0;
+  const neg=s.indexOf('-')!==-1;
+  const digits=s.replace(/[^0-9]/g,'');
+  if(!digits)return 0;
+  const n=parseInt(digits,10);
+  return neg?-n:n;
+}
+function parsePctCO(s){
+  if(!s)return 0;
+  const n=parseFloat(s.replace('%','').replace(',','.').trim());
+  return isNaN(n)?0:n;
+}
+function parseSemanaNum(s){
+  if(!s)return null;
+  const m=s.match(/Semana\s+(\d+)/i);
+  return m?parseInt(m[1],10):null;
+}
+function isoFromSemanaNum(n){
+  if(n==null)return null;
+  const d=addDays(SEMANA1_INICIO,(n-1)*7);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+/* Columnas verificadas contra la hoja real (índices 0-based de la fila CSV) */
+const FC_MILESTONE_SPECS=[
+  {tipo:'Anticipo',label:null,pctIdx:8,valorProyIdx:10,fechaProyIdx:11,fechaRealIdx:12,valorRealIdx:13,fechaPresentaIdx:null,estadoIdx:14},
+  {tipo:'Corte',label:'Corte 1',pctIdx:16,valorProyIdx:22,fechaPresentaIdx:23,fechaProyIdx:24,fechaRealIdx:25,valorRealIdx:26,estadoIdx:27},
+  {tipo:'Corte',label:'Corte 2',pctIdx:29,valorProyIdx:35,fechaPresentaIdx:36,fechaProyIdx:37,fechaRealIdx:38,valorRealIdx:39,estadoIdx:40},
+  {tipo:'Corte',label:'Corte 3',pctIdx:42,valorProyIdx:48,fechaPresentaIdx:49,fechaProyIdx:50,fechaRealIdx:51,valorRealIdx:52,estadoIdx:53},
+  {tipo:'Corte',label:'Corte 4',pctIdx:55,valorProyIdx:61,fechaPresentaIdx:62,fechaProyIdx:63,fechaRealIdx:64,valorRealIdx:null,estadoIdx:65},
+  {tipo:'Retegarantía',label:null,pctIdx:73,valorProyIdx:74,fechaProyIdx:75,fechaRealIdx:76,valorRealIdx:null,fechaPresentaIdx:null,estadoIdx:77},
+  {tipo:'Liquidación',label:null,pctIdx:79,valorProyIdx:80,valorRealIdx:81,fechaPresentaIdx:82,fechaProyIdx:83,fechaRealIdx:83,estadoIdx:84},
+];
+function extractHito(row,spec){
+  const pct=parsePctCO(row[spec.pctIdx]);
+  const valorProy=spec.valorProyIdx!=null?parseMoneyCO(row[spec.valorProyIdx]):0;
+  const valorReal=spec.valorRealIdx!=null?parseMoneyCO(row[spec.valorRealIdx]):0;
+  const estadoRaw=(row[spec.estadoIdx]||'').trim();
+  if(!(pct>0||valorProy>0||valorReal>0||estadoRaw!==''))return null;
+  const estado=estadoRaw==='Confirmado'?'Confirmado':'Pendiente';
+  const valor=valorReal>0?valorReal:valorProy;
+  const semanaNumProy=spec.fechaProyIdx!=null?parseSemanaNum(row[spec.fechaProyIdx]):null;
+  const semanaNumReal=spec.fechaRealIdx!=null?parseSemanaNum(row[spec.fechaRealIdx]):null;
+  const semanaNumPresenta=spec.fechaPresentaIdx!=null?parseSemanaNum(row[spec.fechaPresentaIdx]):null;
+  const semanaNum=semanaNumReal!=null?semanaNumReal:semanaNumProy;
+  if(!(valor>0))return null;
+  return{tipo:spec.tipo,label:spec.label||undefined,valor,
+    semana:isoFromSemanaNum(semanaNum),
+    semanaPresenta:isoFromSemanaNum(semanaNumPresenta),
+    fecha:null,estado};
+}
+async function loadFlujoCajaLive(){
+  const note=document.getElementById('fc-note');
+  try{
+    const res=await fetch(FLUJO_CSV_URL,{credentials:'omit'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    const rows=parseSheetCSV(text);
+    const dataRows=rows.slice(1).filter(r=>r[1]&&r[1].trim());
+    const result=dataRows.map(row=>{
+      const codigo=row[1].trim();
+      const hitos=FC_MILESTONE_SPECS.map(spec=>extractHito(row,spec)).filter(Boolean);
+      return{codigo,hitos};
+    });
+    FLUJO_CAJA.length=0;
+    FLUJO_CAJA.push(...result);
+    if(note)note.style.display='none';
+  }catch(err){
+    console.error('No se pudo cargar el Flujo de Caja en vivo desde el Google Sheet:',err);
+    if(note){note.style.display='block';note.textContent='⚠ No se pudo conectar con el Google Sheet en vivo (revisa tu conexión o que el archivo siga compartido como "Cualquiera con el enlace"). El cuadro de flujo de caja puede estar incompleto.';}
+  }
+}
 const TIPO_COLOR_FC={Anticipo:'#2e7dd1',Corte:'#1a8a52','Liquidación':'#e8622a','Retegarantía':'#a82c00',Vencido:'#c0392b'};
 function mondayOf(d){const dt=new Date(d);const day=(dt.getDay()+6)%7;dt.setHours(0,0,0,0);dt.setDate(dt.getDate()-day);return dt;}
 function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt;}
@@ -1403,22 +1475,18 @@ function buildResumen4Semanas(weeks,rows){
   renderResumen4Semanas();
 }
 function esVencido(h,cutoff){
-  const ingOverdue=h.semanaDate&&h.semanaDate<cutoff&&h.estado!=='Cobrado';
-  const presOverdue=h.semanaPresentaDate&&h.semanaPresentaDate<cutoff&&h.estado!=='Presentado'&&h.estado!=='Cobrado';
+  const ingOverdue=h.semanaDate&&h.semanaDate<cutoff&&h.estado!=='Confirmado';
+  const presOverdue=h.semanaPresentaDate&&h.semanaPresentaDate<cutoff&&h.estado!=='Confirmado';
   return ingOverdue||presOverdue;
 }
 function renderResumen4Semanas(){
   const weeks=fcR4Weeks,rows=fcR4Rows;
   if(!weeks.length)return;
-  const cutoff=weeks[0].start;
-  const vencidosList=rows.filter(h=>esVencido(h,cutoff));
-  const vencidoTotal=vencidosList.reduce((s,h)=>s+h.valor,0);
   const cards=weeks.map((w,i)=>{
     const ingresar=rows.filter(h=>h.semanaDate&&h.semanaDate>=w.start&&h.semanaDate<=w.end).reduce((s,h)=>s+h.valor,0);
     const presentar=rows.filter(h=>h.semanaPresentaDate&&h.semanaPresentaDate>=w.start&&h.semanaPresentaDate<=w.end).reduce((s,h)=>s+h.valor,0);
     const totalSemana=ingresar+presentar;
     const esSemanaActual=i===0;
-    const vencidoRow=esSemanaActual&&vencidoTotal>0?`<div class="fc-r4-row vencido"><span>⚠ Vencido</span><span class="fc-r4-val venc">${fmtMM(vencidoTotal)}</span></div>`:'';
     const cardCls='fc-r4-card'+(i===fcActiveWeek?' active':'');
     return`<div class="${cardCls}" onclick="fcSelectWeek(${i})">
       <div class="fc-r4-wk">Semana ${semanaNumOf(w.start)}${esSemanaActual?' (actual)':''}</div>
@@ -1426,7 +1494,6 @@ function renderResumen4Semanas(){
       <div class="fc-r4-row"><span>A ingresar</span><span class="fc-r4-val ing">${fmtMM(ingresar)}</span></div>
       <div class="fc-r4-row"><span>A presentar</span><span class="fc-r4-val pres">${fmtMM(presentar)}</span></div>
       <div class="fc-r4-row total"><span>Total semana</span><span class="fc-r4-val total">${fmtMM(totalSemana)}</span></div>
-      ${vencidoRow}
     </div>`;
   }).join('');
   document.getElementById('fc-resumen4').innerHTML=cards;
@@ -1438,19 +1505,43 @@ function renderResumen4Semanas(){
       <span><strong style="color:#1a1a1a">${h.proyecto}</strong> — ${h.label||h.tipo} <span class="ht ht-${h.tipo}" style="margin-left:4px">${h.tipo}</span></span>
       <span class="fc-r4-val" style="font-size:11px">${fmtMM(h.valor)}</span></div>`).join(''):
     '<div class="fc-r4-detail-empty">Nada programado esta semana.</div>';
-  const vencidoHtml=fcActiveWeek===0&&vencidosList.length?`
-      <div class="fc-r4-detail-title venc" style="margin-top:12px">⚠ Vencido (acumulado) — ${vencidosList.length} hito(s)</div>
-      ${vencidosList.map(h=>`<div class="fc-r4-row" style="border-bottom:1px solid #f5f3f0;padding:5px 0">
-        <span><strong style="color:#1a1a1a">${h.proyecto}</strong> — ${h.label||h.tipo} <span class="ht ht-${h.tipo}" style="margin-left:4px">${h.tipo}</span></span>
-        <span class="fc-r4-val venc" style="font-size:11px">${fmtMM(h.valor)}</span></div>`).join('')}`:'';
   document.getElementById('fc-resumen4-detail').innerHTML=`
     <div class="fc-r4-detail-wrap">
       <div class="fc-r4-detail-title">A ingresar — Semana ${semanaNumOf(w.start)} (${fcShort(w.start)}–${fcShort(w.end)})</div>
       ${rowHtml(ingRows)}
       <div class="fc-r4-detail-title" style="margin-top:12px">A presentar — Semana ${semanaNumOf(w.start)} (${fcShort(w.start)}–${fcShort(w.end)})</div>
       ${rowHtml(presRows)}
-      ${vencidoHtml}
     </div>`;
+}
+/* ── Panel independiente de Pagos Vencidos (no depende de la semana seleccionada) ── */
+function diasAtraso(fecha,today0){
+  if(!fecha)return null;
+  return Math.max(0,Math.round((today0-fecha)/86400000));
+}
+function renderVencidos(vencidosList,today0){
+  const total=vencidosList.reduce((s,h)=>s+h.valor,0);
+  const sub=document.getElementById('fc-venc-sub');
+  sub.textContent=vencidosList.length? `${vencidosList.length} hito(s) — ${fmtMM(total)} en total`:'Sin pagos vencidos';
+  const sorted=[...vencidosList].sort((a,b)=>{
+    const da=a.semanaDate||a.semanaPresentaDate||new Date(0);
+    const db=b.semanaDate||b.semanaPresentaDate||new Date(0);
+    return da-db;
+  });
+  document.getElementById('fc-vencidos-tbody').innerHTML=sorted.length?sorted.map(h=>{
+    const diasIng=diasAtraso(h.semanaDate&&h.semanaDate<today0?h.semanaDate:null,today0);
+    const diasPres=diasAtraso(h.semanaPresentaDate&&h.semanaPresentaDate<today0?h.semanaPresentaDate:null,today0);
+    const dias=[diasIng,diasPres].filter(d=>d!==null);
+    const diasMax=dias.length?Math.max(...dias):null;
+    return`<tr class="fc-row-venc">
+      <td class="td-primary">${h.proyecto}</td><td>${h.encargado||''}</td>
+      <td><span class="ht ht-${h.tipo}">${h.label||h.tipo}</span></td>
+      <td class="td-money" style="text-align:right">${fmtMM(h.valor)}</td>
+      <td>${h.semanaDate?fcShort(h.semanaDate)+(h.semanaDate<today0?' ⚠':''):'—'}</td>
+      <td>${h.semanaPresentaDate?fcShort(h.semanaPresentaDate)+(h.semanaPresentaDate<today0?' ⚠':''):'—'}</td>
+      <td style="text-align:right;color:#c0392b;font-weight:600">${diasMax!==null?diasMax+' días':'—'}</td>
+      <td><span class="hb ${h.estado==='Confirmado'?'hb-cob':'hb-pend'}">${h.estado}</span></td></tr>`;
+  }).join(''):
+    '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">No hay pagos vencidos con los filtros actuales</td></tr>';
 }
 function buildFlujoCaja(){
   const codigosVisibles=new Set(filteredProjects.map(p=>p.codigo));
@@ -1470,10 +1561,11 @@ function buildFlujoCaja(){
   buildResumen4Semanas(weeks,rows);
 
   const totalProyectado=rows.filter(h=>h.semanaDate&&h.semanaDate>=weeks[0].start&&h.semanaDate<=weeks[11].end).reduce((s,h)=>s+h.valor,0);
-  const vencidos=rows.filter(h=>h.semanaDate&&h.semanaDate<weeks[0].start&&h.estado!=='Cobrado');
+  const vencidos=rows.filter(h=>esVencido(h,weeks[0].start));
   const totalVencido=vencidos.reduce((s,h)=>s+h.valor,0);
+  renderVencidos(vencidos,today0);
   const totalPendiente=rows.filter(h=>h.estado==='Pendiente').reduce((s,h)=>s+h.valor,0);
-  const totalGestionado=rows.filter(h=>h.estado==='Presentado'||h.estado==='Cobrado').reduce((s,h)=>s+h.valor,0);
+  const totalGestionado=rows.filter(h=>h.estado==='Confirmado').reduce((s,h)=>s+h.valor,0);
 
   const sinHitos=FLUJO_CAJA.filter(fc=>codigosVisibles.has(fc.codigo)&&fc.hitos.length===0).length;
   const note=document.getElementById('fc-note');
@@ -1488,15 +1580,14 @@ function buildFlujoCaja(){
     <div class="kpi"><div class="kpi-ico liq"><svg width="16" height="16" fill="none" stroke="#a0620a" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <div><div class="kpi-num" style="color:#a0620a">${fmtMM(totalPendiente)}</div><div class="kpi-lbl">Pendiente por presentar</div></div></div>
     <div class="kpi"><div class="kpi-ico ejec"><svg width="16" height="16" fill="none" stroke="#1a8a52" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-      <div><div class="kpi-num" style="color:#1a8a52">${fmtMM(totalGestionado)}</div><div class="kpi-lbl">Presentado / cobrado</div></div></div>`;
+      <div><div class="kpi-num" style="color:#1a8a52">${fmtMM(totalGestionado)}</div><div class="kpi-lbl">Confirmado</div></div></div>`;
 
-  const byWeek=weeks.map(w=>({Anticipo:0,Corte:0,'Liquidación':0,'Retegarantía':0,'Vencido':0}));
+  const byWeek=weeks.map(w=>({Anticipo:0,Corte:0,'Liquidación':0,'Retegarantía':0}));
   rows.forEach(h=>{if(!h.semanaDate)return;weeks.forEach((w,i)=>{if(h.semanaDate>=w.start&&h.semanaDate<=w.end)byWeek[i][h.tipo]+=h.valor;});});
-  byWeek[0]['Vencido']=rows.filter(h=>esVencido(h,weeks[0].start)).reduce((s,h)=>s+h.valor,0);
   const labels=weeks.map(w=>[`${fcShort(w.start)}–${fcShort(w.end)}`,`Semana ${semanaNumOf(w.start)}`]);
   if(fcSemanaChart)fcSemanaChart.destroy();
   fcSemanaChart=new Chart(document.getElementById('fcSemanaChart'),{type:'bar',
-    data:{labels,datasets:['Anticipo','Corte','Liquidación','Retegarantía','Vencido'].map(t=>({label:t,backgroundColor:TIPO_COLOR_FC[t],data:byWeek.map(w=>w[t]),stack:'s',borderRadius:3}))},
+    data:{labels,datasets:['Anticipo','Corte','Liquidación','Retegarantía'].map(t=>({label:t,backgroundColor:TIPO_COLOR_FC[t],data:byWeek.map(w=>w[t]),stack:'s',borderRadius:3}))},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtMM(c.raw)}`}}},
       scales:{x:{stacked:true,grid:{display:false},ticks:{color:"#6b6b66",font:{size:9}},border:{display:false}},
                y:{stacked:true,grid:{color:"#f0efec"},ticks:{color:"#6b6b66",font:{size:10},callback:v=>fmtMM(v)},border:{display:false}}}}});
@@ -1511,18 +1602,18 @@ function buildFlujoCaja(){
   document.getElementById('fc-donut-n').textContent=rows.length;
   document.getElementById('fc-tipo-legend').innerHTML=tLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${tColors[i]}"></div><span>${l}</span><span class="legend-n">${fmtMM(tData[i])}</span></div>`).join('');
 
-  const pendRows=rows.filter(h=>h.estado!=='Cobrado').sort((a,b)=>{const av=a.semanaDate?a.semanaDate.getTime():Infinity;const bv=b.semanaDate?b.semanaDate.getTime():Infinity;return av-bv;});
+  const vencidosSet=new Set(vencidos);
+  const pendRows=rows.filter(h=>h.estado!=='Confirmado'&&!vencidosSet.has(h)).sort((a,b)=>{const av=a.semanaDate?a.semanaDate.getTime():Infinity;const bv=b.semanaDate?b.semanaDate.getTime():Infinity;return av-bv;});
   document.getElementById('fc-hitos-tbody').innerHTML=pendRows.length?pendRows.map(h=>{
-    const isVenc=h.semanaDate&&h.semanaDate<today0&&h.estado!=='Cobrado';
-    const hbCls=h.estado==='Cobrado'?'hb-cob':h.estado==='Presentado'?'hb-pres':'hb-pend';
-    return`<tr${isVenc?' class="fc-row-venc"':''}>
-      <td>${h.semanaDate?fcShort(h.semanaDate)+(isVenc?' ⚠':''):'<em style="color:#bbb">Sin fecha</em>'}</td>
+    const hbCls=h.estado==='Confirmado'?'hb-cob':'hb-pend';
+    return`<tr>
+      <td>${h.semanaDate?fcShort(h.semanaDate):'<em style="color:#bbb">Sin fecha</em>'}</td>
       <td class="td-primary">${h.proyecto}</td><td>${h.encargado||''}</td>
       <td><span class="ht ht-${h.tipo}">${h.label||h.tipo}</span></td>
       <td class="td-money" style="text-align:right">${fmtMM(h.valor)}</td>
       <td><span class="hb ${hbCls}">${h.estado}</span></td>
       <td>${h.fechaDate?h.fechaDate.toLocaleDateString('es-CO'):'—'}</td></tr>`;}).join(''):
-    '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No hay hitos pendientes con los filtros actuales</td></tr>';
+    '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No hay hitos pendientes con los filtros actuales (los vencidos se muestran en el cuadro de arriba)</td></tr>';
 
   document.getElementById('fc-proy-tbody').innerHTML=FLUJO_CAJA.filter(fc=>codigosVisibles.has(fc.codigo)).map(fc=>{
     const p=PROJECTS.find(x=>x.codigo===fc.codigo);if(!p)return'';
@@ -1541,7 +1632,9 @@ document.addEventListener('DOMContentLoaded',function(){
   populateFilters();
   buildKPIs();buildFinanceBar();buildDonut();buildRisks();buildHealth();buildActions();buildSector();
   buildProjects();buildEstadoFilters();buildDirectores();buildAlertas();buildFinanciero();buildComparativo();
-  buildFlujoCaja();
+  const fcNote=document.getElementById('fc-note');
+  if(fcNote){fcNote.style.display='block';fcNote.textContent='⏳ Cargando datos en vivo desde el Google Sheet...';}
+  loadFlujoCajaLive().then(buildFlujoCaja);
 });
 </script>
 </body>
