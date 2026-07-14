@@ -285,6 +285,11 @@ tr.sel-row td{background:#fff8f4 !important}
 .fc-venc-sub{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#c0392b}
 .fc-venc-note{font-size:10px;color:#8a5a54;background:#fbf1ef;border-radius:6px;padding:7px 10px;margin-bottom:10px}
 tr.fc-row-venc td{background:#fdf5f4}
+.fc-refresh-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fc-refresh-btn{font-family:'Montserrat',sans-serif;font-weight:600;font-size:11px;color:#fff;background:#e8622a;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;transition:background .15s}
+.fc-refresh-btn:hover{background:#d1531f}
+.fc-refresh-btn:disabled{background:#e8b8a2;cursor:wait}
+.fc-refresh-time{font-size:10px;color:#a09c96}
 
 </style>
 </head>
@@ -607,6 +612,10 @@ tr.fc-row-venc td{background:#fdf5f4}
 
     <!-- ════ FLUJO DE CAJA ════ -->
     <div class="page" id="page-flujocaja">
+      <div class="fc-refresh-bar">
+        <button id="fc-refresh-btn" class="fc-refresh-btn" onclick="refreshFlujoCaja()">⟳ Actualizar datos</button>
+        <span class="fc-refresh-time" id="fc-refresh-time"></span>
+      </div>
       <div class="fc-note" id="fc-note" style="display:none"></div>
       <div class="kpi-strip" id="fc-kpi-strip" style="grid-template-columns:repeat(4,1fr)"></div>
       <div class="panel" style="margin-bottom:12px">
@@ -1628,13 +1637,27 @@ function buildFlujoCaja(){
   }).join('');
 }
 
+async function refreshFlujoCaja(){
+  const btn=document.getElementById('fc-refresh-btn');
+  const timeEl=document.getElementById('fc-refresh-time');
+  const fcNote=document.getElementById('fc-note');
+  if(btn){btn.disabled=true;btn.textContent='⟳ Actualizando...';}
+  if(fcNote){fcNote.style.display='block';fcNote.textContent='⏳ Cargando datos en vivo desde el Google Sheet...';}
+  await loadFlujoCajaLive();
+  buildFlujoCaja();
+  if(btn){btn.disabled=false;btn.textContent='⟳ Actualizar datos';}
+  if(timeEl){
+    const now=new Date();
+    const fecha=now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const hora=now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    timeEl.textContent='Última actualización: '+fecha+' · '+hora;
+  }
+}
 document.addEventListener('DOMContentLoaded',function(){
   populateFilters();
   buildKPIs();buildFinanceBar();buildDonut();buildRisks();buildHealth();buildActions();buildSector();
   buildProjects();buildEstadoFilters();buildDirectores();buildAlertas();buildFinanciero();buildComparativo();
-  const fcNote=document.getElementById('fc-note');
-  if(fcNote){fcNote.style.display='block';fcNote.textContent='⏳ Cargando datos en vivo desde el Google Sheet...';}
-  loadFlujoCajaLive().then(buildFlujoCaja);
+  refreshFlujoCaja();
 });
 </script>
 </body>
