@@ -633,7 +633,7 @@ tr.fc-row-venc td{background:#fdf5f4}
             <thead><tr>
               <th>Proyecto</th><th>Encargado</th><th>Hito</th>
               <th style="text-align:right">Valor</th><th>Debía ingresar</th>
-              <th>Debía presentar</th><th style="text-align:right">Días de atraso</th><th>Estado</th>
+              <th>Debía presentar</th><th style="text-align:center">Presentado</th><th style="text-align:right">Días de atraso</th><th>Estado</th>
             </tr></thead>
             <tbody id="fc-vencidos-tbody"></tbody>
           </table>
@@ -674,7 +674,7 @@ tr.fc-row-venc td{background:#fdf5f4}
           <table>
             <thead><tr>
               <th>Semana</th><th>Proyecto</th><th>Encargado</th><th>Hito</th>
-              <th style="text-align:right">Valor</th><th>Estado</th><th>Fecha presentado</th>
+              <th style="text-align:right">Valor</th><th>Estado</th><th style="text-align:center">Presentado</th>
             </tr></thead>
             <tbody id="fc-hitos-tbody"></tbody>
           </table>
@@ -1527,6 +1527,17 @@ function diasAtraso(fecha,today0){
   if(!fecha)return null;
   return Math.max(0,Math.round((today0-fecha)/86400000));
 }
+/* Icono ✓/✗ para indicar si el hito ya fue presentado.
+   Solo aplica a hitos con paso de presentación (Corte/Liquidación).
+   ✓ verde: la fecha de presentación ya pasó (se dio por presentado).
+   ✗ rojo: tiene fecha de presentación pero todavía no llega o sigue pendiente.
+   — gris: el hito no requiere presentación (Anticipo/Retegarantía). */
+function presentadoIcon(h,today0){
+  if(!h.semanaPresentaDate)return'<span style="color:#c5c2bc">—</span>';
+  return h.semanaPresentaDate<=today0
+    ?'<span style="color:#1a8a52;font-weight:700;font-size:13px">✓</span>'
+    :'<span style="color:#c0392b;font-weight:700;font-size:13px">✗</span>';
+}
 function renderVencidos(vencidosList,today0){
   const total=vencidosList.reduce((s,h)=>s+h.valor,0);
   const sub=document.getElementById('fc-venc-sub');
@@ -1547,10 +1558,11 @@ function renderVencidos(vencidosList,today0){
       <td class="td-money" style="text-align:right">${fmtMM(h.valor)}</td>
       <td>${h.semanaDate?fcShort(h.semanaDate)+(h.semanaDate<today0?' ⚠':''):'—'}</td>
       <td>${h.semanaPresentaDate?fcShort(h.semanaPresentaDate)+(h.semanaPresentaDate<today0?' ⚠':''):'—'}</td>
+      <td style="text-align:center">${presentadoIcon(h,today0)}</td>
       <td style="text-align:right;color:#c0392b;font-weight:600">${diasMax!==null?diasMax+' días':'—'}</td>
       <td><span class="hb ${h.estado==='Confirmado'?'hb-cob':'hb-pend'}">${h.estado}</span></td></tr>`;
   }).join(''):
-    '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">No hay pagos vencidos con los filtros actuales</td></tr>';
+    '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:20px">No hay pagos vencidos con los filtros actuales</td></tr>';
 }
 function buildFlujoCaja(){
   const codigosVisibles=new Set(filteredProjects.map(p=>p.codigo));
@@ -1621,7 +1633,7 @@ function buildFlujoCaja(){
       <td><span class="ht ht-${h.tipo}">${h.label||h.tipo}</span></td>
       <td class="td-money" style="text-align:right">${fmtMM(h.valor)}</td>
       <td><span class="hb ${hbCls}">${h.estado}</span></td>
-      <td>${h.fechaDate?h.fechaDate.toLocaleDateString('es-CO'):'—'}</td></tr>`;}).join(''):
+      <td style="text-align:center">${presentadoIcon(h,today0)}</td></tr>`;}).join(''):
     '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No hay hitos pendientes con los filtros actuales (los vencidos se muestran en el cuadro de arriba)</td></tr>';
 
   document.getElementById('fc-proy-tbody').innerHTML=FLUJO_CAJA.filter(fc=>codigosVisibles.has(fc.codigo)).map(fc=>{
