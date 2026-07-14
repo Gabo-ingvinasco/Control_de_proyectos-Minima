@@ -265,7 +265,11 @@ tr.sel-row td{background:#fff8f4 !important}
 .fc-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 .fc-note{font-size:10px;color:#a0620a;background:#fff8f5;border:1px solid #f0c8b8;border-radius:8px;padding:8px 12px;margin-bottom:12px}
 #fcTipoChart{width:190px!important;height:190px!important}
-.fc-r4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+#fcVencTipoChart{width:150px!important;height:150px!important}
+.fc-venc-chart-col .donut-chart-wrap{width:150px;height:150px}
+.fc-r4-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.fc-resumen-grid{grid-template-columns:1.6fr 1fr}
+@media (max-width:900px){.fc-resumen-grid{grid-template-columns:1fr}}
 .fc-r4-card{border:1px solid #e8e5e0;border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;background:#fff}
 .fc-r4-card:hover{border-color:#e8622a;background:#fff8f5}
 .fc-r4-card.active{border-color:#e8622a;background:#fff3ec;box-shadow:0 0 0 1px #e8622a inset}
@@ -288,6 +292,11 @@ tr.sel-row td{background:#fff8f4 !important}
 .fc-venc-sub{font-family:'Montserrat',sans-serif;font-weight:700;font-size:12px;color:#c0392b}
 .fc-venc-note{font-size:10px;color:#8a5a54;background:#fbf1ef;border-radius:6px;padding:7px 10px;margin-bottom:10px}
 tr.fc-row-venc td{background:#fdf5f4}
+.fc-venc-split{display:flex;gap:18px;align-items:stretch}
+.fc-venc-table-col{flex:2 1 0;min-width:0}
+.fc-venc-chart-col{flex:1 1 0;min-width:200px;border-left:1px solid #f0e8e4;padding-left:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.fc-venc-chart-title{font-family:'Montserrat',sans-serif;font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:#a05a52;align-self:flex-start}
+@media (max-width:900px){.fc-venc-split{flex-direction:column}.fc-venc-chart-col{border-left:none;border-top:1px solid #f0e8e4;padding-left:0;padding-top:14px}}
 .fc-refresh-bar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .fc-refresh-btn{font-family:'Montserrat',sans-serif;font-weight:600;font-size:11px;color:#fff;background:#e8622a;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;transition:background .15s}
 .fc-refresh-btn:hover{background:#d1531f}
@@ -621,9 +630,15 @@ tr.fc-row-venc td{background:#fdf5f4}
       </div>
       <div class="fc-note" id="fc-note" style="display:none"></div>
       <div class="kpi-strip" id="fc-kpi-strip" style="grid-template-columns:repeat(4,1fr)"></div>
-      <div class="panel" style="margin-bottom:12px">
-        <div class="panel-head"><div class="panel-title">Resumen próximas 4 semanas</div></div>
-        <div class="fc-r4-grid" id="fc-resumen4"></div>
+      <div class="grid12 fc-resumen-grid">
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-head"><div class="panel-title">Resumen próximas 4 semanas</div></div>
+          <div class="fc-r4-grid" id="fc-resumen4"></div>
+        </div>
+        <div class="panel" style="margin-bottom:0">
+          <div class="panel-head"><div class="panel-title">Detalle de la semana seleccionada</div></div>
+          <div id="fc-resumen4-detail" class="fc-detail-panel"></div>
+        </div>
       </div>
       <div class="panel fc-venc-panel" style="margin-bottom:12px">
         <div class="panel-head">
@@ -631,32 +646,41 @@ tr.fc-row-venc td{background:#fdf5f4}
           <div class="fc-venc-sub" id="fc-venc-sub"></div>
         </div>
         <div class="fc-venc-note">Hitos cuya fecha de ingreso o presentación ya pasó y cuyo estado sigue en <span class="hb hb-pend">Pendiente</span> (no se ha registrado ni confirmado el ingreso). Independiente de lo que corresponde ingresar/presentar esta semana.</div>
-        <div class="tbl-wrap" style="border:none">
-          <table>
-            <thead><tr>
-              <th>Proyecto</th><th>Encargado</th><th>Hito</th>
-              <th style="text-align:right">Valor</th><th>Debía ingresar</th>
-              <th>Debía presentar</th><th style="text-align:right">Días de atraso</th><th>Estado</th>
-            </tr></thead>
-            <tbody id="fc-vencidos-tbody"></tbody>
-          </table>
+        <div class="fc-venc-split">
+          <div class="fc-venc-table-col">
+            <div class="tbl-wrap" style="border:none">
+              <table>
+                <thead><tr>
+                  <th>Proyecto</th><th>Encargado</th><th>Hito</th>
+                  <th style="text-align:right">Valor</th><th>Debía ingresar</th>
+                  <th>Debía presentar</th><th style="text-align:right">Días de atraso</th><th>Estado</th>
+                </tr></thead>
+                <tbody id="fc-vencidos-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="fc-venc-chart-col">
+            <div class="fc-venc-chart-title">Vencido por tipo de hito</div>
+            <div class="donut-chart-wrap" style="margin:0 auto">
+              <canvas id="fcVencTipoChart"></canvas>
+              <div class="donut-center" id="fc-venc-donut-center">
+                <div class="donut-big-n" id="fc-venc-donut-n">—</div>
+                <div class="donut-sub">hitos</div>
+              </div>
+            </div>
+            <div class="legend-list fc-tipo-legend-list" id="fc-venc-tipo-legend"></div>
+          </div>
         </div>
       </div>
-      <div class="grid12">
-        <div class="panel">
-          <div class="panel-head"><div class="panel-title">Detalle de la semana seleccionada</div></div>
-          <div id="fc-resumen4-detail" class="fc-detail-panel"></div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="panel-head"><div class="panel-title">Flujo de caja proyectado — próximas 12 semanas</div></div>
+        <div class="fc-legend">
+          <span><i class="fc-dot" style="background:#2e7dd1"></i>Anticipo</span>
+          <span><i class="fc-dot" style="background:#1a8a52"></i>Corte</span>
+          <span><i class="fc-dot" style="background:#e8622a"></i>Liquidación</span>
+          <span><i class="fc-dot" style="background:#a82c00"></i>Retegarantía</span>
         </div>
-        <div class="panel">
-          <div class="panel-head"><div class="panel-title">Flujo de caja proyectado — próximas 12 semanas</div></div>
-          <div class="fc-legend">
-            <span><i class="fc-dot" style="background:#2e7dd1"></i>Anticipo</span>
-            <span><i class="fc-dot" style="background:#1a8a52"></i>Corte</span>
-            <span><i class="fc-dot" style="background:#e8622a"></i>Liquidación</span>
-            <span><i class="fc-dot" style="background:#a82c00"></i>Retegarantía</span>
-          </div>
-          <div style="height:400px;position:relative"><canvas id="fcSemanaChart"></canvas></div>
-        </div>
+        <div style="height:400px;position:relative"><canvas id="fcSemanaChart"></canvas></div>
       </div>
       <div class="panel" style="margin-bottom:12px">
         <div class="panel-head"><div class="panel-title">Distribución por tipo de hito</div></div>
@@ -1477,7 +1501,7 @@ function fcResolveDate(val,base){if(val==null)return null;if(typeof val==='numbe
 const SEMANA1_INICIO=new Date(2025,11,29);
 function semanaNumOf(d){const diff=Math.round((mondayOf(d)-SEMANA1_INICIO)/(86400000*7));return diff+1;}
 
-let fcSemanaChart,fcTipoChart;
+let fcSemanaChart,fcTipoChart,fcVencTipoChart;
 let fcActiveWeek=0,fcR4Weeks=[],fcR4Rows=[];
 function fcSelectWeek(i){fcActiveWeek=i;renderResumen4Semanas();}
 function buildResumen4Semanas(weeks,rows){
@@ -1573,6 +1597,25 @@ function renderVencidos(vencidosList,today0){
       <td><span class="hb ${h.estado==='Confirmado'?'hb-cob':'hb-pend'}">${h.estado}</span></td></tr>`;
   }).join(''):
     '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">No hay pagos vencidos con los filtros actuales</td></tr>';
+
+  const vTipoTotals={Anticipo:0,Corte:0,'Liquidación':0,'Retegarantía':0};
+  vencidosList.forEach(h=>vTipoTotals[h.tipo]+=h.valor);
+  const vLabelsAll=Object.keys(vTipoTotals);
+  const vLabels=vLabelsAll.filter(l=>vTipoTotals[l]>0);
+  const vData=vLabels.map(l=>vTipoTotals[l]);
+  const vColors=vLabels.map(l=>TIPO_COLOR_FC[l]);
+  if(fcVencTipoChart)fcVencTipoChart.destroy();
+  const vencCanvas=document.getElementById('fcVencTipoChart');
+  if(vencCanvas){
+    fcVencTipoChart=new Chart(vencCanvas,{type:'doughnut',
+      data:{labels:vLabels.length?vLabels:['Sin datos'],datasets:[{data:vLabels.length?vData:[1],backgroundColor:vLabels.length?vColors:['#e8e5e0'],borderWidth:6,borderColor:'#fff',borderRadius:8,spacing:4}]},
+      options:{responsive:false,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{enabled:vLabels.length>0,callbacks:{label:c=>` ${c.label}: ${fmtMM(c.raw)}`}}}}});
+  }
+  const vDonutN=document.getElementById('fc-venc-donut-n');
+  if(vDonutN)vDonutN.textContent=vencidosList.length;
+  const vLegend=document.getElementById('fc-venc-tipo-legend');
+  if(vLegend)vLegend.innerHTML=vLabels.length?vLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${vColors[i]}"></div><span>${l}</span><span class="legend-n">${fmtMM(vData[i])}</span></div>`).join(''):
+    '<div style="font-size:11px;color:#aaa;text-align:center">Sin pagos vencidos</div>';
 }
 function buildFlujoCaja(){
   const codigosVisibles=new Set(filteredProjects.map(p=>p.codigo));
